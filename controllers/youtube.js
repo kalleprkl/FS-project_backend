@@ -1,61 +1,62 @@
-/*const youtubeRouter = require('express').Router()
+const youtubeRouter = require('express').Router()
 const { google } = require('googleapis')
+const OAuth2 = google.auth.OAuth2
+require('dotenv').config()
 
-youtubeRouter.get('/', async (request, response) => {
-    var service = google.youtube('v3');
-    //var parameters = removeEmptyParameters(requestData['params']);
-    //parameters['auth'] = auth;
-    service.playlists.list(params.params, function (err, response) {
-        if (err) {
-            console.log('The API returned an error: ' + err);
-            return;
-        }
-        console.log(response);
-    });
-    response.json({ fuck: 'you' })
+const oauth2Client = new OAuth2(
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+    process.env.REDIRECT_URL
+)
+
+const authUrl = oauth2Client.generateAuthUrl({
+    scope: 'https://www.googleapis.com/auth/youtube'
 })
 
-function playlistsListByChannelId(auth, requestData) {
-    var service = google.youtube('v3');
-    var parameters = removeEmptyParameters(requestData['params']);
-    parameters['auth'] = auth;
-    service.playlists.list(parameters, function (err, response) {
-        if (err) {
-            console.log('The API returned an error: ' + err);
-            return;
-        }
-        console.log(response);
-    });
-}
+console.log(authUrl)
 
-function playlistsListByChannelId(requestData) {
-    var service = google.youtube('v3');
-    var parameters = removeEmptyParameters(requestData['params']);
-    //parameters['auth'] = auth;
-    service.playlists.list(parameters, function (err, response) {
-        if (err) {
-            console.log('The API returned an error: ' + err);
-            return;
-        }
-        console.log(response);
-    });
-}
+youtubeRouter.get('/', (request, response) => {
+    response.send(authUrl)
+})
 
-function removeEmptyParameters(params) {
-    for (var p in params) {
-        if (!params[p] || params[p] == 'undefined') {
-            delete params[p];
+youtubeRouter.get('/auth', (request, reponse) => {
+    const code = request.query.code
+    oauth2Client.getToken(code, (err, tokens) => {
+        if (!err) {
+            oauth2Client.setCredentials(tokens)
+            console.log(tokens)
+        } else {
+            console.log(err)
         }
-    }
-    return params;
-}
+    })
+})
+
+google.options({
+    auth: oauth2Client
+})
 
 const params = {
     params: {
-        channelId: 'UC_x5XG1OV2P6uZZ5FSM9Ttw',
+        playlistId: 'PL34C1F26D03F5F9B8',
         maxResults: '25',
         part: 'snippet,contentDetails'
     }
 }
 
-module.exports = youtubeRouter*/
+youtubeRouter.get('/data', async (request, response) => {
+    var service = google.youtube('v3');
+    //var parameters = removeEmptyParameters(requestData['params']);
+    //parameters['auth'] = auth;
+    service.playlistItems.list(params.params, function (err, res) {
+        if (err) {
+            console.log('The API returned an error: ' + err)
+            return response.error('The API returned an error: ' + err)
+            
+        }
+        response.json(res.data.items)
+        //console.log(res.data.items);
+    });
+    
+})
+
+module.exports = youtubeRouter
