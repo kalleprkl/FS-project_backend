@@ -38,25 +38,21 @@ google.options({
 const params = {
     params: {
         playlistId: 'PL34C1F26D03F5F9B8',
-        maxResults: '25',
+        maxResults: '1',
         part: 'snippet,contentDetails'
     }
 }
 
 youtubeRouter.get('/data', async (request, response) => {
     var service = google.youtube('v3');
-    //var parameters = removeEmptyParameters(requestData['params']);
-    //parameters['auth'] = auth;
-    service.playlistItems.list(params.params, function (err, res) {
-        if (err) {
-            console.log('The API returned an error: ' + err)
-            return response.error('The API returned an error: ' + err)
+    service.playlistItems.list(params.params, function (error, res) {
+        if (error) {
+            console.log('The API returned an error: ' + error)
+            return response.status(500).json({ error })
             
         }
         response.json(res.data.items)
-        //console.log(res.data.items);
-    });
-    
+    })
 })
 
 module.exports = youtubeRouter
