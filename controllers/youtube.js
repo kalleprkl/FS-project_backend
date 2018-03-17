@@ -3,6 +3,8 @@ const { google } = require('googleapis')
 const OAuth2 = google.auth.OAuth2
 require('dotenv').config()
 
+const service = google.youtube('v3');
+    
 const oauth2Client = new OAuth2(
     process.env.CLIENT_ID,
     process.env.CLIENT_SECRET,
@@ -13,14 +15,13 @@ const authUrl = oauth2Client.generateAuthUrl({
     scope: 'https://www.googleapis.com/auth/youtube'
 })
 
-console.log(authUrl)
-
 youtubeRouter.get('/', (request, response) => {
     response.send(authUrl)
 })
 
-youtubeRouter.get('/auth', (request, reponse) => {
+youtubeRouter.get('/auth', (request, response) => {
     const code = request.query.code
+    console.log(code)
     oauth2Client.getToken(code, (err, tokens) => {
         if (!err) {
             oauth2Client.setCredentials(tokens)
@@ -29,6 +30,7 @@ youtubeRouter.get('/auth', (request, reponse) => {
             console.log(err)
         }
     })
+    response.redirect('http://localhost:3000')
 })
 
 google.options({
@@ -44,12 +46,10 @@ const params = {
 }
 
 youtubeRouter.get('/data', async (request, response) => {
-    var service = google.youtube('v3');
-    service.playlistItems.list(params.params, function (error, res) {
+    service.playlistItems.list(params.params, (error, res) => {
         if (error) {
             console.log('The API returned an error: ' + error)
             return response.status(500).json({ error })
-            
         }
         response.json(res.data.items)
     })
