@@ -4,11 +4,13 @@ const cors = require('cors')
 const bodyParser = require('body-parser')
 const app = express()
 const youtubeRouter = require('./controllers/youtube')
+const redditRouter = require('./controllers/reddit')
 
 app.use(cors())
 app.use(bodyParser.json())
 
 app.use('/yt', youtubeRouter)
+app.use('/r', redditRouter)
 
 const server = http.createServer(app)
 

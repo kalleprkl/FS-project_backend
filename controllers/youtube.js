@@ -6,9 +6,9 @@ require('dotenv').config()
 const service = google.youtube('v3');
     
 const oauth2Client = new OAuth2(
-    process.env.CLIENT_ID,
-    process.env.CLIENT_SECRET,
-    process.env.REDIRECT_URL
+    process.env.YOUTUBE_CLIENT_ID,
+    process.env.YOUTUBE_CLIENT_SECRET,
+    process.env.YOUTUBE_REDIRECT_URL
 )
 
 const authUrl = oauth2Client.generateAuthUrl({
@@ -21,16 +21,14 @@ youtubeRouter.get('/', (request, response) => {
 
 youtubeRouter.get('/auth', (request, response) => {
     const code = request.query.code
-    console.log(code)
     oauth2Client.getToken(code, (err, tokens) => {
         if (!err) {
             oauth2Client.setCredentials(tokens)
-            console.log(tokens)
         } else {
             console.log(err)
         }
     })
-    response.redirect('http://localhost:3000')
+    response.redirect('http://localhost:3000/')
 })
 
 google.options({
@@ -46,7 +44,7 @@ const params = {
 }
 
 youtubeRouter.get('/data', async (request, response) => {
-    service.playlistItems.list(params.params, (error, res) => {
+    await service.playlistItems.list(params.params, (error, res) => {
         if (error) {
             console.log('The API returned an error: ' + error)
             return response.status(500).json({ error })
