@@ -6,8 +6,22 @@ const app = express()
 const youtubeRouter = require('./controllers/youtube')
 const redditRouter = require('./controllers/reddit')
 
+const logger = (request, response, next) => {
+    
+    if (request) {
+        console.log('REQUEST',request.headers, request.body)
+    }
+    if (response) {
+        console.log('RESPONSE')
+    }
+
+    next()
+}
+
+
 app.use(cors())
 app.use(bodyParser.json())
+//app.use(logger)
 
 app.use('/yt', youtubeRouter)
 app.use('/r', redditRouter)
@@ -19,6 +33,5 @@ const port = '5000'
 server.listen(port, () => {
     console.log(`server running on port ${port}`)
 })
-
 
 

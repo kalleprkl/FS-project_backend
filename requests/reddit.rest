@@ -1,0 +1,6 @@
+get http://localhost:5000/r/auth
+content-type: application/json
+
+{
+    "jugupugu": "kemmo"
+}
