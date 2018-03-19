@@ -13,7 +13,7 @@ const generateAuthUrl = () => {
     const state = generateState()
     const uri = process.env.REDDIT_REDIRECT_URI
     const duration = 'permanent'
-    const scope = 'identity'
+    const scope = 'read'
     
     const authUrl = `https://www.reddit.com/api/v1/authorize?client_id=${id}&response_type=${type}&state=${state}&redirect_uri=${uri}&duration=${duration}&scope=${scope}`
     
@@ -59,14 +59,14 @@ redditRouter.get('/auth', async (request, response) => {
 redditRouter.get('/data', async (request, response) => {
     try {
         const res = await axios({
-            url: 'https://oauth.reddit.com/api/v1/me',
+            url: 'https://oauth.reddit.com/best',
             headers : {
                 'User-Agent': 'web:randomfeed:v0.1 (by /u/culturalcrusont)',
                 'Authorization': "bearer " + access_token
             }
         })
-        console.log(res)
-        response.status(200)
+        //console.log(res.data.data.children[0])
+        response.status(200).json(res.data.data.children)
     } catch (exception) {
         console.log('fuckd')
         console.log(exception.name)
