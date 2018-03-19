@@ -1,16 +1,15 @@
 const axios = require('axios')
 const redditRouter = require('express').Router()
 const fetch = require('isomorphic-fetch')
+const { generateState } = require('./helpers')
 require('dotenv').config()
 
-let state = ''
+let states = {}
 let access_token
 
-const generateAuthUrl = () => {
-    
+const generateAuthUrl = (state) => {
     const id = process.env.REDDIT_CLIENT_ID
     const type = 'code'
-    const state = generateState()
     const uri = process.env.REDDIT_REDIRECT_URI
     const duration = 'permanent'
     const scope = 'read'
@@ -21,13 +20,17 @@ const generateAuthUrl = () => {
 }
 
 redditRouter.get('/', (request, response) => {
-    const authUrl = generateAuthUrl()
-    response.send(authUrl)
+    const state = generateState()
+    states[state] = ''
+    const authUrl = generateAuthUrl(state)
+    response.send({ authUrl, state })
 })
 
 redditRouter.get('/auth', async (request, response) => {
 
-    if (request.query.state === state) {
+    const state = request.query.state
+    
+    if (Object.keys(states).find(s => s === state)) {
 
         const code = request.query.code
 
@@ -47,7 +50,7 @@ redditRouter.get('/auth', async (request, response) => {
                 data: `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.REDDIT_REDIRECT_URI}`
             })
 
-            access_token =  res.data.access_token
+            states[state] =  res.data.access_token
             response.redirect('http://localhost:3000/')
         
         } catch (exception) {
@@ -56,16 +59,15 @@ redditRouter.get('/auth', async (request, response) => {
     }
 })
 
-redditRouter.get('/data', async (request, response) => {
+redditRouter.get('/data/:id', async (request, response) => {
     try {
         const res = await axios({
             url: 'https://oauth.reddit.com/best',
             headers : {
                 'User-Agent': 'web:randomfeed:v0.1 (by /u/culturalcrusont)',
-                'Authorization': "bearer " + access_token
+                'Authorization': "bearer " + states[request.params.id]
             }
         })
-        //console.log(res.data.data.children[0])
         response.status(200).json(res.data.data.children)
     } catch (exception) {
         console.log('fuckd')
@@ -74,14 +76,13 @@ redditRouter.get('/data', async (request, response) => {
     }
 })
 
-const generateState = () => {
+/*const generateState = () => {
     let string = ''
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
     for (let i = 0; i < 8; i++)
         string += possible.charAt(Math.floor(Math.random() * possible.length));
-    state = string
     return string
-}
+}*/
 
 module.exports = redditRouter
