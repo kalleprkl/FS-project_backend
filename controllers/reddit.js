@@ -20,10 +20,19 @@ const generateAuthUrl = (state) => {
 }
 
 redditRouter.get('/', (request, response) => {
+    let session = false
+    if (states[request.headers.authorization]) {
+        session = true
+    }
     const state = generateState()
     states[state] = ''
     const authUrl = generateAuthUrl(state)
-    response.send({ authUrl, state })
+    const res = { 
+        authUrl, 
+        state,
+        session 
+    }
+    response.send(res)
 })
 
 redditRouter.get('/auth', async (request, response) => {
@@ -34,12 +43,13 @@ redditRouter.get('/auth', async (request, response) => {
         const code = request.query.code
 
         try {
+            
             const res = await axios({
                 method: 'post',
                 url: 'https://www.reddit.com/api/v1/access_token',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': 'web:randomfeed:v0.1 (by /u/culturalcrusont)'
+                    'User-Agent': process.env.REDDIT_USER_AGENT
                 },
                 auth: {
                     username: process.env.REDDIT_CLIENT_ID,

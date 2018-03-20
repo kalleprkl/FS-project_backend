@@ -19,13 +19,17 @@ const oauth2Client = new OAuth2(
 
 
 youtubeRouter.get('/', (request, response) => {
+    let session = false
+    if (states[request.headers.authorization]) {
+        session = true
+    }
     const state = generateState()
     states[state] = ''
     const authUrl = oauth2Client.generateAuthUrl({
         scope: 'https://www.googleapis.com/auth/youtube',
         state
     })
-    response.send({ authUrl, state })
+    response.send({ authUrl, state, session })
 })
 
 youtubeRouter.get('/auth', async (request, response) => {
