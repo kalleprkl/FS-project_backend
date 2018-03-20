@@ -13,9 +13,9 @@ const generateAuthUrl = (state) => {
     const uri = process.env.REDDIT_REDIRECT_URI
     const duration = 'permanent'
     const scope = 'read'
-    
+
     const authUrl = `https://www.reddit.com/api/v1/authorize?client_id=${id}&response_type=${type}&state=${state}&redirect_uri=${uri}&duration=${duration}&scope=${scope}`
-    
+
     return authUrl
 }
 
@@ -27,15 +27,13 @@ redditRouter.get('/', (request, response) => {
 })
 
 redditRouter.get('/auth', async (request, response) => {
-
     const state = request.query.state
-    
+
     if (Object.keys(states).find(s => s === state)) {
 
         const code = request.query.code
 
         try {
-
             const res = await axios({
                 method: 'post',
                 url: 'https://www.reddit.com/api/v1/access_token',
@@ -50,29 +48,30 @@ redditRouter.get('/auth', async (request, response) => {
                 data: `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.REDDIT_REDIRECT_URI}`
             })
 
-            states[state] =  res.data.access_token
+
+            states[state] = res.data.access_token
             response.redirect('http://localhost:3000/')
-        
+
+
         } catch (exception) {
             console.log(exception.name)
         }
     }
 })
 
-redditRouter.get('/data/:id', async (request, response) => {
+redditRouter.get('/data', async (request, response) => {
     try {
         const res = await axios({
             url: 'https://oauth.reddit.com/best',
-            headers : {
+            headers: {
                 'User-Agent': 'web:randomfeed:v0.1 (by /u/culturalcrusont)',
-                'Authorization': "bearer " + states[request.params.id]
+                'Authorization': "bearer " + states[request.headers.authorization]
             }
         })
         response.status(200).json(res.data.data.children)
     } catch (exception) {
-        console.log('fuckd')
-        console.log(exception.name)
-        response.status(500)
+        console.log('unauthorized')
+        response.status(401)
     }
 })
 

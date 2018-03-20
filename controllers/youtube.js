@@ -29,18 +29,17 @@ youtubeRouter.get('/', (request, response) => {
 })
 
 youtubeRouter.get('/auth', async (request, response) => {
-    
+
     const state = request.query.state
-    
+
     if (Object.keys(states).find(s => s === state)) {
         const code = request.query.code
-        const response = await axios.post()
         oauth2Client.getToken(code, (err, tokens) => {
             if (!err) {
                 states[state] = tokens.access_token
                 oauth2Client.setCredentials(tokens)
             } else {
-                console.log(err)
+                console.log('JOO')
             }
         })
     }
@@ -60,11 +59,11 @@ const params = {
     }
 }
 
-youtubeRouter.get('/data/:id', async (request, response) => {
+youtubeRouter.get('/data', async (request, response) => {
     await service.playlistItems.list(params.params, (error, res) => {
         if (error) {
             console.log('The API returned an error: ' + error)
-            return response.status(500).json({ error })
+            return response.status(401)
         }
         response.json(res.data.items)
     })
