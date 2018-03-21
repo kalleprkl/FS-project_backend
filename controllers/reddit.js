@@ -20,19 +20,22 @@ const generateAuthUrl = (state) => {
 }
 
 redditRouter.get('/', (request, response) => {
-    let session = false
     if (states[request.headers.authorization]) {
-        session = true
+        console.log('reddit', states)
+        response.send({ session: true })
+    } else {
+        delete states[request.headers.authorization]
+        const state = generateState()
+        states[state] = ''
+        const authUrl = generateAuthUrl(state)
+        const res = {
+            authUrl,
+            state,
+            session: false
+        }
+        console.log('reddit', states)
+        response.send(res)
     }
-    const state = generateState()
-    states[state] = ''
-    const authUrl = generateAuthUrl(state)
-    const res = { 
-        authUrl, 
-        state,
-        session 
-    }
-    response.send(res)
 })
 
 redditRouter.get('/auth', async (request, response) => {
@@ -43,7 +46,7 @@ redditRouter.get('/auth', async (request, response) => {
         const code = request.query.code
 
         try {
-            
+
             const res = await axios({
                 method: 'post',
                 url: 'https://www.reddit.com/api/v1/access_token',
