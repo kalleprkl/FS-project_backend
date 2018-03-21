@@ -13,12 +13,12 @@ const service = google.youtube('v3');
 const oauth2Client = new OAuth2(
     process.env.YOUTUBE_CLIENT_ID,
     process.env.YOUTUBE_CLIENT_SECRET,
-    process.env.YOUTUBE_REDIRECT_URL
+    process.env.YOUTUBE_REDIRECT_URI
 )
 
 
 
-youtubeRouter.get('/', (request, response) => {
+youtubeRouter.post('/', (request, response) => {
     if (states[request.headers.authorization]) {
         console.log('youtube', states)
         response.send({ session: true })
@@ -42,15 +42,38 @@ youtubeRouter.get('/auth', async (request, response) => {
 
     if (Object.keys(states).find(s => s === state)) {
         const code = request.query.code
+        try {
+            //const res = await axios.post('https://www.googleapis.com/oauth2/v4/token', `code=${code}&client_id${process.env.YOUTUBE_CLIENT_ID}&client_secret=${process.env.YOUTUBE_CLIENT_SECRET}&redirect_uri=${process.env.YOUTUBE_REDIRECT_URI}&grant_type=authorization_code`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+            const res = await axios({
+                method: 'post',
+                url: 'https://www.googleapis.com/oauth2/v4/token',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                auth: {
+                    username: process.env.YOUTUBE_CLIENT_ID,
+                    password: process.env.YOUTUBE_CLIENT_SECRET
+                },
+                data: `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.YOUTUBE_REDIRECT_URI}`
+            })
+            states[state] = res.data.access_token
+            console.log(res)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+   /*if (Object.keys(states).find(s => s === state)) {
+        const code = request.query.code
         oauth2Client.getToken(code, (err, tokens) => {
             if (!err) {
                 states[state] = tokens.access_token
                 oauth2Client.setCredentials(tokens)
             } else {
-                console.log('JOO')
+                console.log(err)
             }
         })
-    }
+   }*/
 
     response.redirect('http://localhost:3000/')
 })
@@ -79,8 +102,9 @@ youtubeRouter.get('/data', async (request, response) => {
 
 youtubeRouter.get('/logout', (request, response) => {
     delete states[request.headers.authorization]
-    oauth2Client.revokeToken()
+    //oauth2Client.revokeToken()
     //response.redirect('http://localhost:3000/')
+    console.log('youtubelogout', states)
     response.status(200)
 })
 

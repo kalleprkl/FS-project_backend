@@ -19,7 +19,7 @@ const generateAuthUrl = (state) => {
     return authUrl
 }
 
-redditRouter.get('/', (request, response) => {
+redditRouter.post('/', (request, response) => {
     if (states[request.headers.authorization]) {
         console.log('reddit', states)
         response.send({ session: true })
@@ -90,7 +90,7 @@ redditRouter.get('/data', async (request, response) => {
 
 redditRouter.get('/logout', (request, response) => {
     delete states[request.headers.authorization]
-    console.log(states)
+    console.log('redditlogout' ,states)
     response.status(200)
 })
 
