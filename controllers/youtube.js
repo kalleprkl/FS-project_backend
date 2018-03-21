@@ -78,8 +78,10 @@ youtubeRouter.get('/data', async (request, response) => {
 })
 
 youtubeRouter.get('/logout', (request, response) => {
+    delete states[request.headers.authorization]
     oauth2Client.revokeToken()
-    response.redirect('http://localhost:3000/')
+    //response.redirect('http://localhost:3000/')
+    response.status(200)
 })
 
 youtubeRouter.get('/data2', async (request, response) => {
@@ -90,16 +92,6 @@ youtubeRouter.get('/data2', async (request, response) => {
         }
         response.json(res.data.items)
     })
-})
-
-youtubeRouter.get('/fart', (request, response) => {
-    try {
-        console.log(fart)
-        response.json(fart)
-    } catch (error) {
-        console.log(error)
-        reponse.status(500).json(error)
-    }
 })
 
 module.exports = youtubeRouter

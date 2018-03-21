@@ -88,13 +88,10 @@ redditRouter.get('/data', async (request, response) => {
     }
 })
 
-/*const generateState = () => {
-    let string = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-
-    for (let i = 0; i < 8; i++)
-        string += possible.charAt(Math.floor(Math.random() * possible.length));
-    return string
-}*/
+redditRouter.get('/logout', (request, response) => {
+    delete states[request.headers.authorization]
+    console.log(states)
+    response.status(200)
+})
 
 module.exports = redditRouter
