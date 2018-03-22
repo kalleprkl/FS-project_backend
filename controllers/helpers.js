@@ -1,5 +1,5 @@
 
-const generateState = () => {
+const generateKey = () => {
     let string = ''
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
@@ -8,4 +8,4 @@ const generateState = () => {
     return string
 }
 
-module.exports = { generateState }
+module.exports = { generateKey }
