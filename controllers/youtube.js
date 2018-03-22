@@ -18,7 +18,7 @@ const oauth2Client = new OAuth2(
 
 
 
-youtubeRouter.get('/old', (request, response) => {
+/*youtubeRouter.get('/old', (request, response) => {
     if (states[request.headers.authorization]) {
         console.log('youtube', states)
         response.send({ session: true })
@@ -34,7 +34,7 @@ youtubeRouter.get('/old', (request, response) => {
         console.log('youtube', states)
         response.send({ authUrl, state, session: false })
     }
-})
+})*/
 
 youtubeRouter.get('/', (request, response) => {
 
@@ -69,7 +69,6 @@ youtubeRouter.get('/auth', async (request, response) => {
     const token = request.query.state
     const decodedToken = jwt.verify(token, process.env.SECRET)
     const key = decodedToken.key
-    console.log(key)
     if (key) {
         const code = request.query.code
         try {
@@ -87,7 +86,6 @@ youtubeRouter.get('/auth', async (request, response) => {
                 data: `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.YOUTUBE_REDIRECT_URI}`
             })
             states[key] = res.data.access_token
-            console.log(states)
         } catch (error) {
             console.log(error)
         }
@@ -121,18 +119,44 @@ const params = {
 }
 
 youtubeRouter.get('/data', async (request, response) => {
-    const token = request.headers.token
+    const token = request.headers.authorization
     const decodedToken = jwt.verify(token, process.env.SECRET)
     const key = decodedToken.key
     if (key) {
+        const apiToken = states[key]
         try {
             const res = await axios({
                 url: 'https://www.googleapis.com/youtube/v3/subscriptions/?mine=true&part=snippet%2CcontentDetails',
                 headers: {
-                    'Authorization': `Bearer ${states[key]}`
+                    'Authorization': `Bearer ${apiToken}`
                 }
             })
-            console.log(res)
+            const channels = res.data.items.map(item => item.snippet.resourceId.channelId)
+            const channelPlaylists = await Promise.all(channels.map(async channel => {
+                //playlists of a channel
+                const res = await axios({
+                    url: `https://www.googleapis.com/youtube/v3/playlists?maxResults=25&channelId=${channel}&part=snippet%2CcontentDetails`,
+                    headers: {
+                        'Authorization': `Bearer ${apiToken}`
+                    }   
+                })
+                const ids = res.data.items.map(item => item.id)
+                return ids
+            }))
+            const playlists = []
+            channelPlaylists.map(cpl => cpl.map(pl => playlists.push(pl)))
+            const videos = await Promise.all(playlists.map(async playlist => {
+                const res = await axios({
+                    url: `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlist}&maxResults=1&part=snippet%2CcontentDetails`,
+                    headers: {
+                        'Authorization': `Bearer ${apiToken}`
+                    }
+                })
+                const videoIds = []
+                res.data.items.map(item => videoIds.push(item.snippet.resourceId.videoId))
+                return res.data.items[0].snippet.resourceId.videoId
+            }))
+            response.status(200).send(videos)
         } catch (error) {
             
         }

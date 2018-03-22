@@ -1,7 +1,7 @@
 const axios = require('axios')
 const redditRouter = require('express').Router()
 const fetch = require('isomorphic-fetch')
-const { generateState } = require('./helpers')
+const { generateKey } = require('./helpers')
 require('dotenv').config()
 
 let states = {}
@@ -25,7 +25,7 @@ redditRouter.get('/', (request, response) => {
         response.send({ session: true })
     } else {
         delete states[request.headers.authorization]
-        const state = generateState()
+        const state = generateKey()
         states[state] = ''
         const authUrl = generateAuthUrl(state)
         const res = {
