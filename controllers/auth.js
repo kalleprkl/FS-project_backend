@@ -15,13 +15,13 @@ exports.checkToken = (token) => {
 exports.generateAuthUrl = (domain) => {
     const token = jwt.sign({ key: generateKey(), date: new Date() }, process.env.SECRET)
     const config = configUrl(domain, token)
-    let authUrl = config.baseUrl + '?response_type=code&'
+    let authUrl = `${config.baseUrl}?response_type=code&`
     Object.keys(config.params).map(param => {
         const string = `${param}=${config.params[param]}&`
         authUrl = authUrl.concat(string)
     })
     authUrl = authUrl.substr(0, authUrl.length - 1)
-    return { url: authUrl, token }
+    return { authUrl, token }
 }
 
 exports.getApiToken = async (domain, code) => {
@@ -98,6 +98,6 @@ const generateKey = () => {
     let string = ''
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     for (let i = 0; i < 8; i++)
-        string += possible.charAt(Math.floor(Math.random() * possible.length));
+        string += possible.charAt(Math.floor(Math.random() * possible.length))
     return string
 }

@@ -1,16 +1,32 @@
 const axios = require('axios')
 
 exports.get = async (token) => {
+    const channels = await getMyChannels(token)
+    const playlists = await getChannelPlaylists(token, channels)
+    const videos = await getPlaylistVideos(token, playlists)
+    return videos
+}
+
+const getMyChannels = async (token) => {
+    let channels = []
     try {
-        const res = await axios({
+        const response = await axios({
             url: 'https://www.googleapis.com/youtube/v3/subscriptions/?mine=true&part=snippet%2CcontentDetails',
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
-        const channels = res.data.items.map(item => item.snippet.resourceId.channelId)
+        channels = response.data.items.map(item => item.snippet.resourceId.channelId)
+    } catch (error) {
+        console.log('api get error')
+    }
+    return channels
+}
+
+const getChannelPlaylists = async (token, channels) => {
+    let playlists = []
+    try {
         const channelPlaylists = await Promise.all(channels.map(async channel => {
-            //playlists of a channel
             const res = await axios({
                 url: `https://www.googleapis.com/youtube/v3/playlists?maxResults=25&channelId=${channel}&part=snippet%2CcontentDetails`,
                 headers: {
@@ -20,21 +36,28 @@ exports.get = async (token) => {
             const ids = res.data.items.map(item => item.id)
             return ids
         }))
-        const playlists = []
         channelPlaylists.map(cpl => cpl.map(pl => playlists.push(pl)))
-        const videos = await Promise.all(playlists.map(async playlist => {
+    } catch (error) {
+        console.log('api get error')
+    }
+    return playlists
+}
+
+const getPlaylistVideos = async (token, playlists) => {
+    let videos = []
+    try {
+        videos = await Promise.all(playlists.map(async playlist => {
             const res = await axios({
                 url: `https://www.googleapis.com/youtube/v3/playlistItems?playlistId=${playlist}&maxResults=1&part=snippet%2CcontentDetails`,
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             })
-            const videoIds = []
-            res.data.items.map(item => videoIds.push(item.snippet.resourceId.videoId))
             return res.data.items[0].snippet.resourceId.videoId
         }))
-        return videos
     } catch (error) {
-        console.log('error with api')
+        console.log('api get error')
     }
+    return videos
 }
+

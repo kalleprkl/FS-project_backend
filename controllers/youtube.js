@@ -11,8 +11,8 @@ youtubeRouter.get('/', (request, response) => {
             return response.send({ isActive: true })
         }
     }
-    const authUrl = generateAuthUrl('youtube')
-    response.send({ authUrl: authUrl.url, token: authUrl.token, isActive: false })
+    const { authUrl, token } = generateAuthUrl('youtube')
+    response.send({ authUrl, token, isActive: false })
 })
 
 youtubeRouter.get('/auth', async (request, response) => {
@@ -38,8 +38,8 @@ youtubeRouter.get('/data', async (request, response) => {
 youtubeRouter.get('/logout', (request, response) => {
     const key = checkToken(request.headers.authorization)
     delete sessions[key]
-    const authUrl = generateAuthUrl('youtube')
-    response.status(200).send({ authUrl: authUrl.url, token: authUrl.token, isActive: false })
+    const { authUrl, token } = generateAuthUrl('youtube')
+    response.status(200).send({ authUrl, token, isActive: false })
 })
 
 module.exports = youtubeRouter

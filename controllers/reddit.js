@@ -11,8 +11,8 @@ redditRouter.get('/', (request, response) => {
             return response.send({ isActive: true })
         }
     }
-    const authUrl = generateAuthUrl('reddit')
-    response.send({ authUrl: authUrl.url, token: authUrl.token, isActive: false })
+    const { authUrl, token } = generateAuthUrl('reddit')
+    response.send({ authUrl, token, isActive: false })
 })
 
 redditRouter.get('/auth', async (request, response) => {
@@ -38,8 +38,8 @@ redditRouter.get('/data', async (request, response) => {
 redditRouter.get('/logout', (request, response) => {
     const key = checkToken(request.headers.authorization)
     delete sessions[key]
-    const authUrl = generateAuthUrl('reddit')
-    response.status(200).send({ authUrl: authUrl.url, token: authUrl.token, isActive: false })
+    const { authUrl, token } = generateAuthUrl('reddit')
+    response.status(200).send({ authUrl, token, isActive: false })
 })
 
 module.exports = redditRouter
