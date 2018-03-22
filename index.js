@@ -5,6 +5,7 @@ const bodyParser = require('body-parser')
 const app = express()
 const youtubeRouter = require('./controllers/youtube')
 const redditRouter = require('./controllers/reddit')
+const { checkToken } = require('./middleware/auth')
 
 const logger = (request, response, next) => {
     
@@ -21,7 +22,7 @@ const logger = (request, response, next) => {
 
 app.use(cors())
 app.use(bodyParser.json())
-//app.use(logger)
+app.use(checkToken)
 
 app.use('/yt', youtubeRouter)
 app.use('/r', redditRouter)

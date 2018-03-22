@@ -5,7 +5,7 @@ const Reddit = require('../models/reddit')
 const sessions = {}
 
 redditRouter.get('/', (request, response) => {
-    const key = checkToken(request.headers.authorization)
+    const key = request.key
     if (key) {
         if (Object.keys(sessions).includes(key) && sessions[key]) {
             return response.send({ isActive: true })
@@ -16,7 +16,7 @@ redditRouter.get('/', (request, response) => {
 })
 
 redditRouter.get('/auth', async (request, response) => {
-    const key = checkToken(request.query.state)
+    const key = request.key
     if (key) {
         const code = request.query.code
         const apiToken = await getApiToken('reddit', code)
@@ -26,7 +26,7 @@ redditRouter.get('/auth', async (request, response) => {
 })
 
 redditRouter.get('/data', async (request, response) => {
-    const key = checkToken(request.headers.authorization)
+    const key = request.key
     if (key) {
         const apiToken = sessions[key]
         const data = await Reddit.get(apiToken)
@@ -36,7 +36,7 @@ redditRouter.get('/data', async (request, response) => {
 })
 
 redditRouter.get('/logout', (request, response) => {
-    const key = checkToken(request.headers.authorization)
+    const key = request.key
     delete sessions[key]
     const { authUrl, token } = generateAuthUrl('reddit')
     response.status(200).send({ authUrl, token, isActive: false })
