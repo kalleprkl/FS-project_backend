@@ -19,7 +19,7 @@ const generateAuthUrl = (state) => {
     return authUrl
 }
 
-redditRouter.post('/', (request, response) => {
+redditRouter.get('/', (request, response) => {
     if (states[request.headers.authorization]) {
         console.log('reddit', states)
         response.send({ session: true })

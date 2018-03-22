@@ -18,7 +18,7 @@ const oauth2Client = new OAuth2(
 
 
 
-youtubeRouter.post('/', (request, response) => {
+youtubeRouter.get('/', (request, response) => {
     if (states[request.headers.authorization]) {
         console.log('youtube', states)
         response.send({ session: true })
