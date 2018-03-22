@@ -1,97 +1,45 @@
-const axios = require('axios')
 const redditRouter = require('express').Router()
-const fetch = require('isomorphic-fetch')
-const { generateKey } = require('./helpers')
-require('dotenv').config()
+const { checkToken, generateAuthUrl, getApiToken } = require('./auth')
+const Reddit = require('../models/reddit')
 
-let states = {}
-let access_token
-
-const generateAuthUrl = (state) => {
-    const id = process.env.REDDIT_CLIENT_ID
-    const type = 'code'
-    const uri = process.env.REDDIT_REDIRECT_URI
-    const duration = 'permanent'
-    const scope = 'read'
-
-    const authUrl = `https://www.reddit.com/api/v1/authorize?client_id=${id}&response_type=${type}&state=${state}&redirect_uri=${uri}&duration=${duration}&scope=${scope}`
-
-    return authUrl
-}
+const sessions = {}
 
 redditRouter.get('/', (request, response) => {
-    if (states[request.headers.authorization]) {
-        console.log('reddit', states)
-        response.send({ session: true })
-    } else {
-        delete states[request.headers.authorization]
-        const state = generateKey()
-        states[state] = ''
-        const authUrl = generateAuthUrl(state)
-        const res = {
-            authUrl,
-            state,
-            session: false
+    const key = checkToken(request.headers.authorization)
+    if (key) {
+        if (Object.keys(sessions).includes(key) && sessions[key]) {
+            return response.send({ isActive: true })
         }
-        console.log('reddit', states)
-        response.send(res)
     }
+    const authUrl = generateAuthUrl('reddit')
+    response.send({ authUrl: authUrl.url, token: authUrl.token, isActive: false })
 })
 
 redditRouter.get('/auth', async (request, response) => {
-    const state = request.query.state
-
-    if (Object.keys(states).find(s => s === state)) {
-
+    const key = checkToken(request.query.state)
+    if (key) {
         const code = request.query.code
-
-        try {
-
-            const res = await axios({
-                method: 'post',
-                url: 'https://www.reddit.com/api/v1/access_token',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': process.env.REDDIT_USER_AGENT
-                },
-                auth: {
-                    username: process.env.REDDIT_CLIENT_ID,
-                    password: process.env.REDDIT_CLIENT_SECRET
-                },
-                data: `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.REDDIT_REDIRECT_URI}`
-            })
-
-
-            states[state] = res.data.access_token
-            response.redirect('http://localhost:3000/')
-
-
-        } catch (exception) {
-            console.log(exception.name)
-        }
+        const apiToken = await getApiToken('reddit', code)
+        sessions[key] = apiToken
     }
+    response.redirect('http://localhost:3000/')
 })
 
 redditRouter.get('/data', async (request, response) => {
-    try {
-        const res = await axios({
-            url: 'https://oauth.reddit.com/best',
-            headers: {
-                'User-Agent': 'web:randomfeed:v0.1 (by /u/culturalcrusont)',
-                'Authorization': "bearer " + states[request.headers.authorization]
-            }
-        })
-        response.status(200).json(res.data.data.children)
-    } catch (exception) {
-        console.log('unauthorized')
-        response.status(401)
-    }
+    const key = checkToken(request.headers.authorization)
+    if (key) {
+        const apiToken = sessions[key]
+        const data = await Reddit.get(apiToken)
+        return response.status(200).send(data)
+    } 
+    response.status(401).send()
 })
 
 redditRouter.get('/logout', (request, response) => {
-    delete states[request.headers.authorization]
-    console.log('redditlogout' ,states)
-    response.status(200)
+    const key = checkToken(request.headers.authorization)
+    delete sessions[key]
+    const authUrl = generateAuthUrl('reddit')
+    response.status(200).send({ authUrl: authUrl.url, token: authUrl.token, isActive: false })
 })
 
 module.exports = redditRouter

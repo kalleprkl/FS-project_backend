@@ -17,11 +17,8 @@
     "dotenv": "^5.0.1",
     "es6-promise": "^4.2.4",
     "express": "^4.16.3",
-    "express-session": "^1.15.6",
-    "googleapis": "^27.0.0",
     "isomorphic-fetch": "^2.2.1",
-    "jsonwebtoken": "^8.2.0",
-    "oauth2-server": "^3.0.0"
+    "jsonwebtoken": "^8.2.0"
   },
   "devDependencies": {
     "nodemon": "^1.17.2"
