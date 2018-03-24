@@ -1,5 +1,10 @@
 exports.apis = ['youtube', 'reddit']
 
+exports.models = {
+    youtube: require('./models/youtube'),
+    reddit: require('./models/reddit')
+}
+
 exports.tokenRequest = (api, code) => {
     switch (api) {
         case 'youtube':

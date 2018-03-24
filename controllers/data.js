@@ -1,15 +1,11 @@
 const dataRouter = require('express').Router()
 const { sessions } = require('../sessions')
-
-const models = {
-    youtube: require('../models/youtube'),
-    reddit: require('../models/reddit')
-}
+const { models } = require('../config')
 
 dataRouter.get('/:api', async (request, response) => {
     const key = request.key
     if (key) {
-        const api = request.params.api 
+        const api = request.params.api
         const model = models[api]
         const sessionApis = sessions[key]
         const apiToken = sessionApis[api]

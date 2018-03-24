@@ -1,10 +1,14 @@
 const axios = require('axios')
 
 exports.get = async (token) => {
-    const channels = await getMyChannels(token)
-    const playlists = await getChannelPlaylists(token, channels)
-    const videos = await getPlaylistVideos(token, playlists)
-    return videos
+    try {
+        const channels = await getMyChannels(token)
+        const playlists = await getChannelPlaylists(token, channels)
+        const videos = await getPlaylistVideos(token, playlists)
+        return videos
+    } catch (error) {
+        console.log('api get error')
+    }
 }
 
 const getMyChannels = async (token) => {
