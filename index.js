@@ -6,7 +6,8 @@ const bodyParser = require('body-parser')
 const app = express()
 const youtubeRouter = require('./controllers/youtube')
 const redditRouter = require('./controllers/reddit')
-const authRouter = require('./controllers/authRouter')
+const authRouter = require('./controllers/auth')
+const dataRouter = require('./controllers/data')
 const { checkToken } = require('./middleware/auth')
 
 
@@ -30,6 +31,7 @@ app.use(bodyParser.json())
 app.use(checkToken)
 
 app.use('/auth', authRouter)
+app.use('/data', dataRouter)
 app.use('/yt', youtubeRouter)
 app.use('/r', redditRouter)
 

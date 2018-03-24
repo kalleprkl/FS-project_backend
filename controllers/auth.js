@@ -1,95 +1,48 @@
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
+const { iterateOverObject, generateAuthUrl, generateKey,getAuth } = require('../helpers/auth')
+const authRouter = require('express').Router()
+const { sessions } = require('../sessions')
+const config = require('../config')
 
-const generateAuthUrl = (domain) => {
-    const token = jwt.sign({ key: generateKey(), date: new Date() }, process.env.SECRET)
-    const config = configUrl(domain, token)
-    let authUrl = `${config.baseUrl}?response_type=code&`
-    Object.keys(config.params).map(param => {
-        const string = `${param}=${config.params[param]}&`
-        authUrl = authUrl.concat(string)
+authRouter.get('/', (request, response) => {
+    //console.log(sessions)
+    const key = request.key
+    const sessionApis = sessions[key]
+    if (key && sessionApis) {
+        const apis = []
+        iterateOverObject(sessionApis, (api) => {
+            if (!sessionApis[api]) {
+                const authUrl = generateAuthUrl(api, key)
+                apis.push({
+                    api,
+                    authUrl
+                })
+            } else {
+                apis.push({
+                    api,
+                    authUrl: ''
+                })
+            }
+        })
+        return response.send({ apis })
+    }
+    const newKey = generateKey()
+    const token = jwt.sign({ key: newKey }, process.env.SECRET)
+    const apis = config.apis.map(api => {
+        return { api, authUrl: generateAuthUrl(api, newKey) }
     })
-    authUrl = authUrl.substr(0, authUrl.length - 1)
-    return { authUrl, token }
-}
+    response.send({ token, apis })
+})
 
-const getApiToken = async (domain, code) => {
-    const request = configTokenRequest(domain, code)
-    try {
-        const response = await axios(request)
-        return response.data.access_token
-    } catch (error) {
-        console.log('invalid request')
-    }
-}
+authRouter.get('/r', (request, response) => {
+    getAuth('reddit', request)
+    response.redirect('http://localhost:3000/')
+})
 
-const configTokenRequest = (domain, code) => {
-    switch (domain) {
-        case 'youtube':
-            return {
-                method: 'post',
-                url: 'https://www.googleapis.com/oauth2/v4/token',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                auth: {
-                    username: process.env.YOUTUBE_CLIENT_ID,
-                    password: process.env.YOUTUBE_CLIENT_SECRET
-                },
-                data: `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.YOUTUBE_REDIRECT_URI}`
-            }
-        case 'reddit':
-            return {
-                method: 'post',
-                url: 'https://www.reddit.com/api/v1/access_token',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'User-Agent': process.env.REDDIT_USER_AGENT
-                },
-                auth: {
-                    username: process.env.REDDIT_CLIENT_ID,
-                    password: process.env.REDDIT_CLIENT_SECRET
-                },
-                data: `grant_type=authorization_code&code=${code}&redirect_uri=${process.env.REDDIT_REDIRECT_URI}`
-            }
-    }
-}
+authRouter.get('/yt', (request, response) => {
+    getAuth('youtube', request)
+    response.redirect('http://localhost:3000/')
+})
 
-const configUrl = (domain, token) => {
-    switch (domain) {
-        case 'youtube':
-            return {
-                baseUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-                params: {
-                    client_id: process.env.YOUTUBE_CLIENT_ID,
-                    redirect_uri: process.env.YOUTUBE_REDIRECT_URI,
-                    scope: 'https://www.googleapis.com/auth/youtube',
-                    access_type: 'offline',
-                    state: token
-                }
-            }
-        case 'reddit':
-            return {
-                baseUrl: 'https://www.reddit.com/api/v1/authorize',
-                params: {
-                    client_id: process.env.REDDIT_CLIENT_ID,
-                    response_type: 'code',
-                    state: token,
-                    redirect_uri: process.env.REDDIT_REDIRECT_URI,
-                    duration: 'permanent',
-                    scope: 'read'
-                }
-            }
-    }
-}
-
-const generateKey = () => {
-    let string = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let i = 0; i < 8; i++)
-        string += possible.charAt(Math.floor(Math.random() * possible.length))
-    console.log(string)
-    return string
-}
-
-module.exports = { generateAuthUrl, getApiToken, generateKey }
+module.exports = authRouter
