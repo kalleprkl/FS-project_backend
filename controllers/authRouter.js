@@ -1,20 +1,57 @@
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
+const authRouter = require('express').Router()
 
-const generateAuthUrl = (domain) => {
-    const token = jwt.sign({ key: generateKey(), date: new Date() }, process.env.SECRET)
-    const config = configUrl(domain, token)
-    let authUrl = `${config.baseUrl}?response_type=code&`
-    Object.keys(config.params).map(param => {
-        const string = `${param}=${config.params[param]}&`
-        authUrl = authUrl.concat(string)
-    })
-    authUrl = authUrl.substr(0, authUrl.length - 1)
-    return { authUrl, token }
+const config = ['youtube', 'reddit']
+
+const sessions = {
+    'd4COHeNV': [
+        { api: 'youtube', apiToken: '<token>' },
+        { api: 'reddit', apiToken: '' }
+    ]
 }
 
-const getApiToken = async (domain, code) => {
-    const request = configTokenRequest(domain, code)
+authRouter.get('/', (request, response) => {
+    //console.log(jwt.sign({ key: generateKey() }, process.env.SECRET))
+    //console.log(key)
+    const key = request.key
+    const sess = sessions[key]
+    if (key && sess) {
+        const apis = []
+        iterateOverObject(sess, ({ api, apiToken }) => {
+            if (!apiToken) {
+                const authUrl = generateAuthUrl(api, key)
+                apis.push({
+                    api,
+                    authUrl
+                })
+            } else {
+                apis.push({
+                    api,
+                    authUrl: ''
+                })
+            }
+        })
+        return response.send({ apis })
+    }
+    const token = jwt.sign({ key: generateKey() }, process.env.SECRET)
+    response.send({ token })
+})
+
+authRouter.get('/r', (request, response) => {
+    getAuth('reddit', request)
+    response.redirect('http://localhost:3000/')
+})
+
+authRouter.get('/yt', (request, response) => {
+    getAuth('youtube', request)
+    response.redirect('http://localhost:3000/')
+})
+
+/////////////////////////////////////////////////////////////////////////////
+
+const getApiToken = async (api, code) => {
+    const request = configTokenRequest(api, code)
     try {
         const response = await axios(request)
         return response.data.access_token
@@ -23,8 +60,38 @@ const getApiToken = async (domain, code) => {
     }
 }
 
-const configTokenRequest = (domain, code) => {
-    switch (domain) {
+const getAuth = async (api, request) => {
+    const key = request.key
+    if (key) {
+        const code = request.query.code
+        console.log(code)
+        const apiToken = await getApiToken(api, code)
+        sessions[key] = [...sessions[key], { api, apiToken }]
+    }
+}
+
+const iterateOverObject = (object, action) => {
+    Object.keys(object).map(attr => {
+        action(object[attr])
+    })
+}
+
+const generateAuthUrl = (api, key) => {
+    const token = jwt.sign({ key }, process.env.SECRET)
+    const config = configUrl(api, token)
+    let authUrl = `${config.baseUrl}?response_type=code&`
+    Object.keys(config.params).map(param => {
+        const string = `${param}=${config.params[param]}&`
+        authUrl = authUrl.concat(string)
+    })
+    authUrl = authUrl.substr(0, authUrl.length - 1)
+    return authUrl
+}
+
+
+
+const configTokenRequest = (api, code) => {
+    switch (api) {
         case 'youtube':
             return {
                 method: 'post',
@@ -55,8 +122,8 @@ const configTokenRequest = (domain, code) => {
     }
 }
 
-const configUrl = (domain, token) => {
-    switch (domain) {
+const configUrl = (api, token) => {
+    switch (api) {
         case 'youtube':
             return {
                 baseUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -88,8 +155,8 @@ const generateKey = () => {
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     for (let i = 0; i < 8; i++)
         string += possible.charAt(Math.floor(Math.random() * possible.length))
-    console.log(string)
     return string
 }
 
-module.exports = { generateAuthUrl, getApiToken, generateKey }
+
+module.exports = authRouter

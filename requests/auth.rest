@@ -1,0 +1,3 @@
+get http://localhost:5000/auth
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJkNENPSGVOViIsImlhdCI6MTUyMTg5NzI2NX0.JUnzG-EpNvPQ7mZAA225WqCxTf4gw9cQ8t6pJwVTN1Q
+
