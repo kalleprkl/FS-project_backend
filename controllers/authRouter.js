@@ -5,21 +5,19 @@ const authRouter = require('express').Router()
 const config = ['youtube', 'reddit']
 
 const sessions = {
-    'd4COHeNV': [
-        { api: 'youtube', apiToken: '<token>' },
-        { api: 'reddit', apiToken: '' }
-    ]
+    /*'d4COHeNV': {
+        youtube: '<apiToken>',
+        reddit: '<apiToken>'
+    }*/
 }
 
 authRouter.get('/', (request, response) => {
-    //console.log(jwt.sign({ key: generateKey() }, process.env.SECRET))
-    //console.log(key)
     const key = request.key
-    const sess = sessions[key]
-    if (key && sess) {
+    const sessionApis = sessions[key]
+    if (key && sessionApis) {
         const apis = []
-        iterateOverObject(sess, ({ api, apiToken }) => {
-            if (!apiToken) {
+        iterateOverObject(sessionApis, (api) => {
+            if (!sessionApis[api]) {
                 const authUrl = generateAuthUrl(api, key)
                 apis.push({
                     api,
@@ -34,8 +32,12 @@ authRouter.get('/', (request, response) => {
         })
         return response.send({ apis })
     }
-    const token = jwt.sign({ key: generateKey() }, process.env.SECRET)
-    response.send({ token })
+    const newKey = generateKey()
+    const token = jwt.sign({ key: newKey }, process.env.SECRET)
+    const apis = config.map(api => {
+        return { api, authUrl: generateAuthUrl(api, newKey) }
+    })
+    response.send({ token, apis })
 })
 
 authRouter.get('/r', (request, response) => {
@@ -64,15 +66,28 @@ const getAuth = async (api, request) => {
     const key = request.key
     if (key) {
         const code = request.query.code
-        console.log(code)
         const apiToken = await getApiToken(api, code)
-        sessions[key] = [...sessions[key], { api, apiToken }]
+        const session = sessions[key]
+        if (session) {
+            session[api] = apiToken
+            sessions[key] = session
+        } else {
+            const newSession = {}
+            config.map(a => {
+                if (a === api) {
+                    newSession[api] = apiToken
+                } else {
+                    newSession[a] = ''
+                }
+            })
+            sessions[key] = newSession
+        }
     }
 }
 
 const iterateOverObject = (object, action) => {
     Object.keys(object).map(attr => {
-        action(object[attr])
+        action(attr)
     })
 }
 

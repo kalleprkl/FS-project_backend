@@ -6,13 +6,16 @@ exports.checkToken = (request, reponse, next) => {
     const authorization = request.get('authorization')
     if (state) {
         try {
-            request.key = jwt.verify(state, process.env.SECRET).key
+            const decoded = jwt.verify(state, process.env.SECRET)
+            request.key = decoded.key
         } catch (error) {
         }
     }
     if (authorization) {
         try {
-            request.key = jwt.verify(authorization, process.env.SECRET).key
+            const decoded = jwt.verify(authorization, process.env.SECRET)
+
+            request.key = decoded.key
         } catch (error) {
         }
     }

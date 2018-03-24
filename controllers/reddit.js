@@ -2,7 +2,7 @@ const redditRouter = require('express').Router()
 const { generateAuthUrl, getApiToken } = require('./auth')
 const Reddit = require('../models/reddit')
 
-const sessions = {}
+/*const sessions = {}
 
 redditRouter.get('/', (request, response) => {
     const key = request.key
@@ -23,7 +23,7 @@ redditRouter.get('/auth', async (request, response) => {
         sessions[key] = apiToken
     }
     response.redirect('http://localhost:3000/')
-})
+})*/
 
 redditRouter.get('/data', async (request, response) => {
     const key = request.key
@@ -35,11 +35,11 @@ redditRouter.get('/data', async (request, response) => {
     response.status(401).send()
 })
 
-redditRouter.get('/logout', (request, response) => {
+/*redditRouter.get('/logout', (request, response) => {
     const key = request.key
     delete sessions[key]
     const { authUrl, token } = generateAuthUrl('reddit')
     response.status(200).send({ authUrl, token, isActive: false })
-})
+})*/
 
 module.exports = redditRouter
