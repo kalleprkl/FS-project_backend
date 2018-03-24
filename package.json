@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "watch": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "NODE_ENV=production node index.js",
+    "watch": "NODE_ENV=development nodemon index.js",
+    "test": "NODE_ENV=test jest --verbose"
   },
   "author": "",
   "license": "ISC",
@@ -18,7 +18,8 @@
     "es6-promise": "^4.2.4",
     "express": "^4.16.3",
     "isomorphic-fetch": "^2.2.1",
-    "jsonwebtoken": "^8.2.0"
+    "jsonwebtoken": "^8.2.0",
+    "mongoose": "^5.0.11"
   },
   "devDependencies": {
     "nodemon": "^1.17.2"

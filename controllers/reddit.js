@@ -1,5 +1,5 @@
 const redditRouter = require('express').Router()
-const { checkToken, generateAuthUrl, getApiToken } = require('./auth')
+const { generateAuthUrl, getApiToken } = require('./auth')
 const Reddit = require('../models/reddit')
 
 const sessions = {}

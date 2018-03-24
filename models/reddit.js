@@ -1,5 +1,4 @@
 const axios = require('axios')
-require('dotenv').config()
 
 exports.get = async (token) => {
     try {

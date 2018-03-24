@@ -1,24 +1,28 @@
 const http = require('http')
 const express = require('express')
 const cors = require('cors')
+const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 const app = express()
 const youtubeRouter = require('./controllers/youtube')
 const redditRouter = require('./controllers/reddit')
 const { checkToken } = require('./middleware/auth')
 
-const logger = (request, response, next) => {
-    
-    if (request) {
-        console.log('REQUEST',request.headers, request.body)
-    }
-    if (response) {
-        console.log('RESPONSE')
-    }
 
-    next()
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config()
 }
 
+mongoose
+    .connect(process.env.MONGODB_URI)
+    .then(() => {
+        console.log('connected to database')
+    })
+    .catch(err => {
+        console.log(err)
+    })
+
+mongoose.Promise = global.Promise
 
 app.use(cors())
 app.use(bodyParser.json())
@@ -29,10 +33,14 @@ app.use('/r', redditRouter)
 
 const server = http.createServer(app)
 
-const port = '5000'
+const port = process.env.PORT
 
 server.listen(port, () => {
     console.log(`server running on port ${port}`)
+})
+
+server.on('close', () => {
+    mongoose.connection.close()
 })
 
 

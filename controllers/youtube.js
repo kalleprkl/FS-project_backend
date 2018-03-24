@@ -1,11 +1,11 @@
 const youtubeRouter = require('express').Router()
-const { checkToken, generateAuthUrl, getApiToken } = require('./auth')
+const { generateAuthUrl, getApiToken } = require('./auth')
 const Youtube = require('../models/youtube')
 
 const sessions = {}
 
 youtubeRouter.get('/', (request, response) => {
-    const key = checkToken(request.headers.authorization)
+    const key = request.key
     if (key) {
         if (Object.keys(sessions).includes(key) && sessions[key]) {
             return response.send({ isActive: true })
@@ -16,7 +16,7 @@ youtubeRouter.get('/', (request, response) => {
 })
 
 youtubeRouter.get('/auth', async (request, response) => {
-    const key = checkToken(request.query.state)
+    const key = request.key
     if (key) {
         const code = request.query.code
         const apiToken = await getApiToken('youtube', code)
@@ -26,7 +26,7 @@ youtubeRouter.get('/auth', async (request, response) => {
 })
 
 youtubeRouter.get('/data', async (request, response) => {
-    const key = checkToken(request.headers.authorization)
+    const key = request.key
     if (key) {
         const apiToken = sessions[key]
         const videos = await Youtube.get(apiToken)
@@ -36,7 +36,7 @@ youtubeRouter.get('/data', async (request, response) => {
 })
 
 youtubeRouter.get('/logout', (request, response) => {
-    const key = checkToken(request.headers.authorization)
+    const key = request.key
     delete sessions[key]
     const { authUrl, token } = generateAuthUrl('youtube')
     response.status(200).send({ authUrl, token, isActive: false })

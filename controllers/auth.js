@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
-require('dotenv').config()
 
 exports.generateAuthUrl = (domain) => {
     const token = jwt.sign({ key: generateKey(), date: new Date() }, process.env.SECRET)

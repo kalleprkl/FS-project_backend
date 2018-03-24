@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken')
-require('dotenv').config()
 
 exports.checkToken = (request, reponse, next) => {
+    //console.log(request.url)
     const state = request.query.state
     const authorization = request.get('authorization')
     if (state) {
