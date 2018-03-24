@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 
-exports.checkToken = (request, reponse, next) => {
+exports.extractKeyFromRequest = (request, reponse, next) => {
     const state = request.query.state
     const authorization = request.get('authorization')
     if (state) {

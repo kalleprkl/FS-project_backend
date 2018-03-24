@@ -4,9 +4,9 @@ const cors = require('cors')
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 const app = express()
-const authRouter = require('./controllers/auth')
+const sessionRouter = require('./controllers/session')
 const dataRouter = require('./controllers/data')
-const { checkToken } = require('./middleware/auth')
+const { extractKeyFromRequest } = require('./middleware/auth')
 
 
 if (process.env.NODE_ENV !== 'production') {
@@ -26,9 +26,9 @@ mongoose.Promise = global.Promise
 
 app.use(cors())
 app.use(bodyParser.json())
-app.use(checkToken)
+app.use(extractKeyFromRequest)
 
-app.use('/auth', authRouter)
+app.use('/auth', sessionRouter)
 app.use('/data', dataRouter)
 
 const server = http.createServer(app)
