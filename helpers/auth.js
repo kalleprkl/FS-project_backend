@@ -3,6 +3,24 @@ const axios = require('axios')
 const { sessions } = require('../sessions')
 const config = require('../config')
 
+const logout = (api, key) => {
+    console.log('before', sessions)
+    const sessionApis = sessions[key]
+    if (sessionApis) {
+        sessionApis[api] = ''
+        let empty = true
+        iterateOverObject(sessionApis, (api) => {
+            if (sessionApis[api]) {
+                empty = false
+            }
+        })
+        if (empty) {
+            delete sessions[key]
+        }
+    }
+    console.log('after', sessions)
+}
+
 const getApiToken = async (api, code) => {
     const request = config.tokenRequest(api, code)
     try {
@@ -66,5 +84,6 @@ module.exports = {
     iterateOverObject,
     generateAuthUrl,
     generateKey,
-    getAuth
+    getAuth,
+    logout
 }

@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
-const { iterateOverObject, generateAuthUrl, generateKey,getAuth } = require('../helpers/auth')
+const { iterateOverObject, generateAuthUrl, generateKey, getAuth, logout } = require('../helpers/auth')
 const authRouter = require('express').Router()
 const { sessions } = require('../sessions')
 const config = require('../config')
@@ -43,6 +43,12 @@ authRouter.get('/r', (request, response) => {
 authRouter.get('/yt', (request, response) => {
     getAuth('youtube', request)
     response.redirect('http://localhost:3000/')
+})
+
+authRouter.get('/logout/:api', (request, response) => {
+    const api = request.params.api
+    const key = request.key
+    logout(api, key)
 })
 
 module.exports = authRouter
