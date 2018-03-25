@@ -1,11 +1,23 @@
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
-const { sessions } = require('../models/session')
 const config = require('../config')
+
+const sessions = {}
+
+const findByKey = (key) => {
+    const session = sessions[key]
+    if (session) {
+        return {
+            key,
+            apis: session
+        }
+    }
+    return ''
+}
 
 const processInitialQuery = (key) => {
     const sessionApis = sessions[key]
-    if (key && sessionApis) {
+    if (sessionApis) {
         const apis = []
         iterateOverObject(sessionApis, (api) => {
             if (!sessionApis[api]) {
@@ -23,6 +35,34 @@ const processInitialQuery = (key) => {
         })
         return { apis }
     }
+    const newKey = generateKey()
+    const token = jwt.sign({ key: newKey }, process.env.SECRET)
+    const apis = config.apis.map(api => {
+        return { api, authUrl: generateAuthUrl(api, newKey) }
+    })
+    return { apis, token }
+}
+
+const useExistingSession = (session) => {
+    const apis = []
+        iterateOverObject(session.apis, (api) => {
+            if (!session.apis[api]) {
+                const authUrl = generateAuthUrl(api, session.key)
+                apis.push({
+                    api,
+                    authUrl
+                })
+            } else {
+                apis.push({
+                    api,
+                    authUrl: ''
+                })
+            }
+        })
+        return { apis }
+}
+
+const createNewSession = () => {
     const newKey = generateKey()
     const token = jwt.sign({ key: newKey }, process.env.SECRET)
     const apis = config.apis.map(api => {
@@ -67,9 +107,11 @@ const logout = (api, key) => {
         }
     } 
     if (sessions[key]) {
+        const response = useExistingSession(findByKey(key))
         return processInitialQuery(key)
     } else {
-        return processInitialQuery(generateKey())
+        const newKey = generateKey()
+        return processInitialQuery(newKey)
     }
 }
 
@@ -109,7 +151,12 @@ const generateKey = () => {
     return string
 }
 
-module.exports = { processInitialQuery, getAuthorization, logout }
-
-
-
+module.exports = { 
+    processInitialQuery, 
+    getAuthorization, 
+    logout, 
+    sessions, 
+    useExistingSession,
+    createNewSession,
+    findByKey
+}

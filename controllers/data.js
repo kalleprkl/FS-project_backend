@@ -1,5 +1,5 @@
 const dataRouter = require('express').Router()
-const { sessions } = require('../sessions')
+const { sessions } = require('../models/session')
 const { models } = require('../config')
 
 dataRouter.get('/:api', async (request, response) => {
