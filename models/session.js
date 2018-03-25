@@ -15,72 +15,62 @@ const findByKey = (key) => {
     return ''
 }
 
+const setApiToken = (key, api, apiToken) => {
+    const session = sessions[key]
+    if (session) {
+        session[api] = apiToken
+        return true
+    }
+    return false
+}
+
+const removeApiToken = (session, api) => {
+    const key = session.key
+    if (api && key) {
+        sessions[key][api] = ''
+    }
+}
+
+const removeSession = ({ key }) => {
+    delete sessions[key]
+}
+
+const newSession = (key, api, apiToken) => {
+    const apis = {}
+    apis[api] = apiToken
+    config.apis.map(api => {
+        if (!apis[api]) {
+            apis[api] = ''
+        }
+    })
+    sessions[key] = apis
+}
+
 const updateSession = ({ key, apis }) => {
     sessions[key] = apis
 }
 
-const addSession = (session) => {
-    const apis = session.apis
-    config.apis.map(api => {
-         if (!apis[api]) {
-             apis[api] = ''
-         }
-    })
-    sessions[session.key] = apis
-}
-
-const processInitialQuery = (key) => {
-    const sessionApis = sessions[key]
-    if (sessionApis) {
-        const apis = []
-        iterateOverObject(sessionApis, (api) => {
-            if (!sessionApis[api]) {
-                const authUrl = generateAuthUrl(api, key)
-                apis.push({
-                    api,
-                    authUrl
-                })
-            } else {
-                apis.push({
-                    api,
-                    authUrl: ''
-                })
-            }
-        })
-        return { apis }
-    }
-    const newKey = generateKey()
-    const token = jwt.sign({ key: newKey }, process.env.SECRET)
-    const apis = config.apis.map(api => {
-        return { api, authUrl: generateAuthUrl(api, newKey) }
-    })
-    return { apis, token }
-}
-
-const useExistingSession = (session) => {
+const responseForExistingSession = (session) => {
     const apis = []
-        iterateOverObject(session.apis, (api) => {
-            if (!session.apis[api]) {
-                const authUrl = generateAuthUrl(api, session.key)
-                apis.push({
-                    api,
-                    authUrl
-                })
-            } else {
-                apis.push({
-                    api,
-                    authUrl: ''
-                })
-            }
-        })
-        return { apis }
+    iterateOverObject(session.apis, (api) => {
+        if (!session.apis[api]) {
+            const authUrl = generateAuthUrl(api, session.key)
+            apis.push({
+                api,
+                authUrl
+            })
+        } else {
+            apis.push({
+                api,
+                authUrl: ''
+            })
+        }
+    })
+    return { apis }
 }
 
-const createNewSession = (key) => {
+const responseForNewSession = () => {
     let newKey = generateKey()
-    if (key) {
-        newKey = key
-    }
     const token = jwt.sign({ key: newKey }, process.env.SECRET)
     const apis = config.apis.map(api => {
         return { api, authUrl: generateAuthUrl(api, newKey) }
@@ -88,48 +78,17 @@ const createNewSession = (key) => {
     return { apis, token }
 }
 
-const getAuthorization = async (api, key, code) => {
-    if (key && code) {
-        const apiToken = await getApiToken(api, code)
-        const session = sessions[key]
-        if (session) {
-            session[api] = apiToken
-            sessions[key] = session
-        } else {
-            const newSession = {}
-            config.apis.map(a => {
-                if (a === api) {
-                    newSession[api] = apiToken
-                } else {
-                    newSession[a] = ''
-                }
-            })
-            sessions[key] = newSession
+const hasActiveApis = ({ apis, key }) => {
+    let empty = true
+    iterateOverObject(apis, api => {
+        if (apis[api]) {
+            empty = false
         }
+    })
+    if (empty) {
+        return false
     }
-}
-
-const logout = (api, key) => {
-    const sessionApis = sessions[key]
-    if (sessionApis) {
-        sessionApis[api] = ''
-        let empty = true
-        iterateOverObject(sessionApis, (api) => {
-            if (sessionApis[api]) {
-                empty = false
-            }
-        })
-        if (empty) {
-            delete sessions[key]
-        }
-    } 
-    if (sessions[key]) {
-        const response = useExistingSession(findByKey(key))
-        return processInitialQuery(key)
-    } else {
-        const newKey = generateKey()
-        return processInitialQuery(newKey)
-    }
+    return true
 }
 
 const generateAuthUrl = (api, key) => {
@@ -144,7 +103,7 @@ const generateAuthUrl = (api, key) => {
     return authUrl
 }
 
-const getApiToken = async (api, code) => {
+const requestApiToken = async (api, code) => {
     const request = config.tokenRequest(api, code)
     try {
         const response = await axios(request)
@@ -169,13 +128,15 @@ const generateKey = () => {
     return string
 }
 
-module.exports = { 
-    logout, 
-    useExistingSession,
-    createNewSession,
+module.exports = {
+    responseForExistingSession,
+    responseForNewSession,
     findByKey,
-    getApiToken,
+    requestApiToken,
     updateSession,
-    addSession,
-    sessions
+    newSession,
+    removeApiToken,
+    hasActiveApis,
+    setApiToken,
+    removeSession
 }
