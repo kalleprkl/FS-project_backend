@@ -1,19 +1,21 @@
 const dataRouter = require('express').Router()
-const { sessions } = require('../models/session')
+const Session = require('../models/session')
 const { models } = require('../config')
 
 dataRouter.get('/:api', async (request, response) => {
     const key = request.key
     if (key) {
-        try {
+        const session = Session.findByKey(key)
+        if (session) {
             const api = request.params.api
-            const model = models[api]
-            const sessionApis = sessions[key]
-            const apiToken = sessionApis[api]
-            const data = await model.get(apiToken)
-            return response.send(data)
-        } catch (error) {
-
+            const apiToken = session.apis[api]
+            if (apiToken) {
+                const model = models[api]
+                const data = await model.get(apiToken)
+                if (data) {
+                    return response.send(data)
+                }
+            }
         }
     }
     response.status(401).send()

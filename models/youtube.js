@@ -8,6 +8,7 @@ exports.get = async (token) => {
         return videos
     } catch (error) {
         console.log('api get error')
+        return ''
     }
 }
 

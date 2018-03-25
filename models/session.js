@@ -5,14 +5,28 @@ const config = require('../config')
 const sessions = {}
 
 const findByKey = (key) => {
-    const session = sessions[key]
-    if (session) {
+    const apis = sessions[key]
+    if (apis) {
         return {
             key,
-            apis: session
+            apis
         }
     }
     return ''
+}
+
+const updateSession = ({ key, apis }) => {
+    sessions[key] = apis
+}
+
+const addSession = (session) => {
+    const apis = session.apis
+    config.apis.map(api => {
+         if (!apis[api]) {
+             apis[api] = ''
+         }
+    })
+    sessions[session.key] = apis
 }
 
 const processInitialQuery = (key) => {
@@ -62,8 +76,11 @@ const useExistingSession = (session) => {
         return { apis }
 }
 
-const createNewSession = () => {
-    const newKey = generateKey()
+const createNewSession = (key) => {
+    let newKey = generateKey()
+    if (key) {
+        newKey = key
+    }
     const token = jwt.sign({ key: newKey }, process.env.SECRET)
     const apis = config.apis.map(api => {
         return { api, authUrl: generateAuthUrl(api, newKey) }
@@ -134,6 +151,7 @@ const getApiToken = async (api, code) => {
         return response.data.access_token
     } catch (error) {
         console.log('invalid request')
+        return ''
     }
 }
 
@@ -152,11 +170,12 @@ const generateKey = () => {
 }
 
 module.exports = { 
-    processInitialQuery, 
-    getAuthorization, 
     logout, 
-    sessions, 
     useExistingSession,
     createNewSession,
-    findByKey
+    findByKey,
+    getApiToken,
+    updateSession,
+    addSession,
+    sessions
 }

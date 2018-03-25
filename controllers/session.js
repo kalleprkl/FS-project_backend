@@ -12,8 +12,28 @@ sessionRouter.get('/', (request, response) => {
     response.send(responseContent)
 })
 
-sessionRouter.get('/:api', (request, response) => {
-    Session.getAuthorization(request.params.api, request.key, request.query.code)
+sessionRouter.get('/:api', async (request, response) => {
+    const code = request.query.code
+    if (code) {
+        const api = request.params.api
+        const apiToken = await Session.getApiToken(api, code)
+        if (apiToken) {
+            const key = request.key
+            const session = Session.findByKey(key)
+            if (session) {
+                session.apis[api] = apiToken
+                Session.updateSession(session)
+            } else {
+                const apis = {}
+                apis[api] = apiToken
+                const newSession = {
+                    key,
+                    apis
+                }
+                Session.addSession(newSession)
+            }
+        }
+    }
     response.redirect('http://localhost:3000/')
 })
 
