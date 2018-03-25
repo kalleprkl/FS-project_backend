@@ -3,8 +3,7 @@ const axios = require('axios')
 const { sessions } = require('../sessions')
 const config = require('../config')
 
-exports.processInitialQuery = (request) => {
-    const key = request.key
+const processInitialQuery = (key) => {
     const sessionApis = sessions[key]
     if (key && sessionApis) {
         const apis = []
@@ -32,11 +31,8 @@ exports.processInitialQuery = (request) => {
     return { apis, token }
 }
 
-exports.getAuthorization = async (request) => {
-    const key = request.key
-    const api = request.params.api
-    if (key) {
-        const code = request.query.code
+const getAuthorization = async (api, key, code) => {
+    if (key && code) {
         const apiToken = await getApiToken(api, code)
         const session = sessions[key]
         if (session) {
@@ -56,9 +52,7 @@ exports.getAuthorization = async (request) => {
     }
 }
 
-exports.logout = (request) => {
-    const api = request.params.api
-    const key = request.key
+const logout = (api, key) => {
     const sessionApis = sessions[key]
     if (sessionApis) {
         sessionApis[api] = ''
@@ -71,6 +65,11 @@ exports.logout = (request) => {
         if (empty) {
             delete sessions[key]
         }
+    } 
+    if (sessions[key]) {
+        return processInitialQuery(key)
+    } else {
+        return processInitialQuery(generateKey())
     }
 }
 
@@ -109,4 +108,8 @@ const generateKey = () => {
         string += possible.charAt(Math.floor(Math.random() * possible.length))
     return string
 }
+
+module.exports = { processInitialQuery, getAuthorization, logout }
+
+
 
