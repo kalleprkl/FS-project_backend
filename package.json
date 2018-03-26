@@ -19,7 +19,9 @@
     "express": "^4.16.3",
     "isomorphic-fetch": "^2.2.1",
     "jsonwebtoken": "^8.2.0",
-    "mongoose": "^5.0.11"
+    "mongoose": "^5.0.11",
+    "nock": "^9.2.3",
+    "rewire": "^3.0.2"
   },
   "devDependencies": {
     "jest": "^22.4.3",

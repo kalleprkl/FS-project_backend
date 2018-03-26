@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken')
 const axios = require('axios')
 const config = require('../utils/config/session')
 
-const sessions = {}
+let sessions = {}   //not const because tests
 
 exports.findByKey = (key) => {
     const apis = sessions[key]
@@ -29,25 +29,27 @@ exports.removeSession = ({ key }) => {
 }
 
 exports.responseForExisting = (session) => {
-    const key = session.key
-    if (key) {
+    if (session && session.key) {
+        const key = session.key
         const sessionApis = sessions[key]
-        const apis = []
-        iterateOverObject(sessionApis, (api) => {
-            if (!sessionApis[api]) {
-                const authUrl = generateAuthUrl(api, key)
-                apis.push({
-                    api,
-                    authUrl
-                })
-            } else {
-                apis.push({
-                    api,
-                    authUrl: ''
-                })
-            }
-        })
-        return { apis }
+        if (sessionApis) {
+            const apis = []
+            iterateOverObject(sessionApis, (api) => {
+                if (!sessionApis[api]) {
+                    const authUrl = generateAuthUrl(api, key)
+                    apis.push({
+                        api,
+                        authUrl
+                    })
+                } else {
+                    apis.push({
+                        api,
+                        authUrl: ''
+                    })
+                }
+            })
+            return { apis }
+        }
     }
     return ''
 }
@@ -62,32 +64,36 @@ exports.responseForNewSession = () => {
 }
 
 exports.requestApiToken = async (api, code) => {
-    const request = config.tokenRequest(api, code)
-    try {
-        const response = await axios(request)
-        return response.data.access_token
-    } catch (error) {
-        console.log('invalid request')
-        return ''
+    if (api && code) {
+        const request = config.tokenRequest(api, code)
+        try {
+            const response = await axios(request)
+            return response.data.access_token
+        } catch (error) {
+        }
     }
+    return ''
 }
 
 const sessionObject = (key) => {
-    return {
-        key,
-        setApiToken: (api, apiToken) => {
-            return setApiToken(key, api, apiToken)
-        },
-        getApiToken: (api) => {
-            return getApiToken(key, api)
-        },
-        removeApiToken: (api, apiToken) => {
-            return removeApiToken(key, api, apiToken)
-        },
-        hasActiveApis: () => {
-            return hasActiveApis(key)
+    if (key) {
+        return {
+            key,
+            setApiToken: (api, apiToken) => {
+                return setApiToken(key, api, apiToken)
+            },
+            getApiToken: (api) => {
+                return getApiToken(key, api)
+            },
+            removeApiToken: (api) => {
+                return removeApiToken(key, api)
+            },
+            hasActiveApis: () => {
+                return hasActiveApis(key)
+            }
         }
     }
+    return ''
 }
 
 const setApiToken = (key, api, apiToken) => {
