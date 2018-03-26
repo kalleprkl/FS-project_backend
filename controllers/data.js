@@ -8,7 +8,7 @@ dataRouter.get('/:api', async (request, response) => {
         const session = Session.findByKey(key)
         if (session) {
             const api = request.params.api
-            const apiToken = session.apis[api]
+            const apiToken = session.getApiToken(api)
             if (apiToken) {
                 const model = models[api]
                 const data = await model.get(apiToken)

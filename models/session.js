@@ -7,53 +7,32 @@ const sessions = {}
 const findByKey = (key) => {
     const apis = sessions[key]
     if (apis) {
-        return {
-            key,
-            apis
-        }
+        return sessionObject(key)
     }
     return ''
 }
 
-const setApiToken = (key, api, apiToken) => {
-    const session = sessions[key]
-    if (session) {
-        session[api] = apiToken
-        return true
+const newSession = (key) => {
+    if (key) {
+        const apis = {}
+        config.apis.map(api => {
+            apis[api] = ''
+        })
+        sessions[key] = apis
+        return sessionObject(key)
     }
-    return false
-}
-
-const removeApiToken = (session, api) => {
-    const key = session.key
-    if (api && key) {
-        sessions[key][api] = ''
-    }
+    return ''
 }
 
 const removeSession = ({ key }) => {
     delete sessions[key]
 }
 
-const newSession = (key, api, apiToken) => {
-    const apis = {}
-    apis[api] = apiToken
-    config.apis.map(api => {
-        if (!apis[api]) {
-            apis[api] = ''
-        }
-    })
-    sessions[key] = apis
-}
-
-const updateSession = ({ key, apis }) => {
-    sessions[key] = apis
-}
-
 const responseForExistingSession = (session) => {
+    const sessionApis = sessions[session.key]
     const apis = []
-    iterateOverObject(session.apis, (api) => {
-        if (!session.apis[api]) {
+    iterateOverObject(sessionApis, (api) => {
+        if (!sessionApis[api]) {
             const authUrl = generateAuthUrl(api, session.key)
             apis.push({
                 api,
@@ -78,7 +57,61 @@ const responseForNewSession = () => {
     return { apis, token }
 }
 
-const hasActiveApis = ({ apis, key }) => {
+const requestApiToken = async (api, code) => {
+    const request = config.tokenRequest(api, code)
+    try {
+        const response = await axios(request)
+        return response.data.access_token
+    } catch (error) {
+        console.log('invalid request')
+        return ''
+    }
+}
+
+const sessionObject = (key) => {
+    return {
+        key,
+        setApiToken: (api, apiToken) => {
+            return setApiToken(key, api, apiToken)
+        },
+        getApiToken: (api) => {
+            return getApiToken(key, api)
+        },
+        removeApiToken: (api, apiToken) => {
+            return removeApiToken(key, api, apiToken)
+        },
+        hasActiveApis: () => {
+            return hasActiveApis(key)
+        }
+    }
+}
+
+const setApiToken = (key, api, apiToken) => {
+    const session = sessions[key]
+    if (session) {
+        session[api] = apiToken
+        return true
+    }
+    return false
+}
+
+const getApiToken = (key, api) => {
+    if (api && key) {
+        return sessions[key][api]
+    }
+    return ""
+}
+
+const removeApiToken = (key, api) => {
+    if (api && key) {
+        sessions[key][api] = ''
+        return true
+    }
+    return false
+}
+
+const hasActiveApis = (key) => {
+    const apis = sessions[key]
     let empty = true
     iterateOverObject(apis, api => {
         if (apis[api]) {
@@ -103,16 +136,7 @@ const generateAuthUrl = (api, key) => {
     return authUrl
 }
 
-const requestApiToken = async (api, code) => {
-    const request = config.tokenRequest(api, code)
-    try {
-        const response = await axios(request)
-        return response.data.access_token
-    } catch (error) {
-        console.log('invalid request')
-        return ''
-    }
-}
+
 
 const iterateOverObject = (object, action) => {
     Object.keys(object).map(attr => {
@@ -133,10 +157,6 @@ module.exports = {
     responseForNewSession,
     findByKey,
     requestApiToken,
-    updateSession,
     newSession,
-    removeApiToken,
-    hasActiveApis,
-    setApiToken,
     removeSession
 }

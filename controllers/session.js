@@ -22,9 +22,12 @@ sessionRouter.get('/:api', async (request, response) => {
         const apiToken = await Session.requestApiToken(api, code)
         if (apiToken) {
             const key = request.key
-            const isSet = Session.setApiToken(key, api, apiToken)
-            if (!isSet) {
-                Session.newSession(key, api, apiToken)
+            const session = Session.findByKey(key)
+            if (session) {
+                session.setApiToken(api, apiToken)
+            } else {
+                const newSession = Session.newSession(key)
+                newSession.setApiToken(api, apiToken)
             }
         }
     }
@@ -35,13 +38,11 @@ sessionRouter.get('/:api', async (request, response) => {
 sessionRouter.get('/logout/:api', (request, response) => {
 
     const session = Session.findByKey(request.key)
-    Session.removeApiToken(session, request.params.api)
+    session.removeApiToken(request.params.api)
     let responseContent = ''
-    if (Session.hasActiveApis(session)) {
-        console.log('if')
+    if (session.hasActiveApis()) {
         responseContent = Session.responseForExistingSession(session)
     } else {
-        console.log('else')
         Session.removeSession(session)
         responseContent = Session.responseForNewSession()
     }
