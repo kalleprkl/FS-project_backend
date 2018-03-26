@@ -4,7 +4,7 @@ const config = require('../config')
 
 const sessions = {}
 
-const findByKey = (key) => {
+exports.findByKey = (key) => {
     const apis = sessions[key]
     if (apis) {
         return sessionObject(key)
@@ -12,7 +12,7 @@ const findByKey = (key) => {
     return ''
 }
 
-const newSession = (key) => {
+exports.newSession = (key) => {
     if (key) {
         const apis = {}
         config.apis.map(api => {
@@ -24,11 +24,11 @@ const newSession = (key) => {
     return ''
 }
 
-const removeSession = ({ key }) => {
+exports.removeSession = ({ key }) => {
     delete sessions[key]
 }
 
-const responseForExistingSession = (session) => {
+exports.responseForExistingSession = (session) => {
     const sessionApis = sessions[session.key]
     const apis = []
     iterateOverObject(sessionApis, (api) => {
@@ -48,7 +48,7 @@ const responseForExistingSession = (session) => {
     return { apis }
 }
 
-const responseForNewSession = () => {
+exports.responseForNewSession = () => {
     let newKey = generateKey()
     const token = jwt.sign({ key: newKey }, process.env.SECRET)
     const apis = config.apis.map(api => {
@@ -57,7 +57,7 @@ const responseForNewSession = () => {
     return { apis, token }
 }
 
-const requestApiToken = async (api, code) => {
+exports.requestApiToken = async (api, code) => {
     const request = config.tokenRequest(api, code)
     try {
         const response = await axios(request)
@@ -152,11 +152,3 @@ const generateKey = () => {
     return string
 }
 
-module.exports = {
-    responseForExistingSession,
-    responseForNewSession,
-    findByKey,
-    requestApiToken,
-    newSession,
-    removeSession
-}
