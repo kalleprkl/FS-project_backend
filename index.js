@@ -6,7 +6,7 @@ const bodyParser = require('body-parser')
 const app = express()
 const sessionRouter = require('./controllers/session')
 const dataRouter = require('./controllers/data')
-const { extractKeyFromRequest } = require('./middleware/auth')
+const { extractKeyFromRequest } = require('./utils/middleware/auth')
 
 
 if (process.env.NODE_ENV !== 'production') {

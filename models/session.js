@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
-const config = require('../config')
+const config = require('../utils/config/session')
 
 const sessions = {}
 
@@ -28,24 +28,28 @@ exports.removeSession = ({ key }) => {
     delete sessions[key]
 }
 
-exports.responseForExistingSession = (session) => {
-    const sessionApis = sessions[session.key]
-    const apis = []
-    iterateOverObject(sessionApis, (api) => {
-        if (!sessionApis[api]) {
-            const authUrl = generateAuthUrl(api, session.key)
-            apis.push({
-                api,
-                authUrl
-            })
-        } else {
-            apis.push({
-                api,
-                authUrl: ''
-            })
-        }
-    })
-    return { apis }
+exports.responseForExisting = (session) => {
+    const key = session.key
+    if (key) {
+        const sessionApis = sessions[key]
+        const apis = []
+        iterateOverObject(sessionApis, (api) => {
+            if (!sessionApis[api]) {
+                const authUrl = generateAuthUrl(api, key)
+                apis.push({
+                    api,
+                    authUrl
+                })
+            } else {
+                apis.push({
+                    api,
+                    authUrl: ''
+                })
+            }
+        })
+        return { apis }
+    }
+    return ''
 }
 
 exports.responseForNewSession = () => {
@@ -87,9 +91,9 @@ const sessionObject = (key) => {
 }
 
 const setApiToken = (key, api, apiToken) => {
-    const session = sessions[key]
-    if (session) {
-        session[api] = apiToken
+    const apis = sessions[key]
+    if (apis) {
+        apis[api] = apiToken
         return true
     }
     return false
@@ -99,7 +103,7 @@ const getApiToken = (key, api) => {
     if (api && key) {
         return sessions[key][api]
     }
-    return ""
+    return ''
 }
 
 const removeApiToken = (key, api) => {

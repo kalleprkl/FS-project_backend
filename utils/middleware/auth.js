@@ -10,10 +10,10 @@ exports.extractKeyFromRequest = (request, reponse, next) => {
         } catch (error) {
         }
     }
-    if (authorization) {
-        let key = ''
+    if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+        const token = authorization.substring(7)
         try {
-            key = jwt.verify(authorization, process.env.SECRET).key
+            const key = jwt.verify(token, process.env.SECRET).key
             request.key = key
         } catch (error) {
         }

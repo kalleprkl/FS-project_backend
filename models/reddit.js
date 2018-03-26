@@ -1,6 +1,6 @@
 const axios = require('axios')
 
-exports.get = async (token) => {
+exports.getContent = async (token) => {
     try {
         const res = await axios({
             url: 'https://oauth.reddit.com/best',

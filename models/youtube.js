@@ -1,6 +1,6 @@
 const axios = require('axios')
 
-exports.get = async (token) => {
+exports.getContent = async (token) => {
     try {
         const channels = await getMyChannels(token)
         const playlists = await getChannelPlaylists(token, channels)

@@ -2,11 +2,11 @@ const Session = require('../models/session')
 const sessionRouter = require('express').Router()
 
 sessionRouter.get('/', (request, response) => {
-
+    //initial query from browser
     const session = Session.findByKey(request.key)
     let responseContent = ''
     if (session) {
-        responseContent = Session.responseForExistingSession(session)
+        responseContent = Session.responseForExisting(session)
     } else {
         responseContent = Session.responseForNewSession()
     }
@@ -15,7 +15,7 @@ sessionRouter.get('/', (request, response) => {
 })
 
 sessionRouter.get('/:api', async (request, response) => {
-
+    //ouath redirect uri
     const code = request.query.code
     if (code) {
         const api = request.params.api
@@ -38,16 +38,18 @@ sessionRouter.get('/:api', async (request, response) => {
 sessionRouter.get('/logout/:api', (request, response) => {
 
     const session = Session.findByKey(request.key)
-    session.removeApiToken(request.params.api)
-    let responseContent = ''
-    if (session.hasActiveApis()) {
-        responseContent = Session.responseForExistingSession(session)
-    } else {
-        Session.removeSession(session)
-        responseContent = Session.responseForNewSession()
+    if (session) {
+        session.removeApiToken(request.params.api)
+        let responseContent = ''
+        if (session.hasActiveApis()) {
+            responseContent = Session.responseForExisting(session)
+        } else {
+            Session.removeSession(session)
+            responseContent = Session.responseForNewSession()
+        }
+        response.send(responseContent)
     }
-    response.send(responseContent)
-
+    response.status(400).send()
 })
 
 module.exports = sessionRouter
