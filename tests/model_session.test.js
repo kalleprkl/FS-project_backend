@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken')
 const rewire = require('rewire')
 const session = rewire('../models/session')
 const nock = require('nock')
@@ -57,7 +58,7 @@ describe('findByKey', () => {
 
 describe('newSession', () => {
 
-    beforeAll(() => {
+    beforeEach(() => {
         session.__set__('sessions', {})
     })
     afterAll(() => {
@@ -67,9 +68,12 @@ describe('newSession', () => {
     it('does nothing without parameter', () => {
         const sessions = session.__get__('sessions')
         expect(sessions).toEqual({})
-        const sessionObject = session.newSession()
+        let sessionObject = session.newSession()
         expect(sessions).toEqual({})
-        expect(sessionObject).toBe('')
+        expect(sessionObject).toBeFalsy()
+        sessionObject = session.newSession({})
+        expect(sessions).toEqual({})
+        expect(sessionObject).toBeFalsy()
     })
 
     it('creates new session and returns session object', () => {
@@ -83,11 +87,12 @@ describe('newSession', () => {
 })
 
 describe('removeSession', () => {
-    it('removes Session', () => {
+    it('removes session', () => {
         session.__set__('sessions', noActiveApis)
-        expect(session.__get__('sessions')).toEqual(noActiveApis)
+        const sessions = session.__get__('sessions')
+        expect(sessions).toEqual(noActiveApis)
         session.removeSession({ key: '123' })
-        expect(session.__get__('sessions')).toEqual(noActiveApis)
+        expect(sessions).toEqual(noActiveApis)
         session.removeSession({ key: '1234' })
         expect(session.__get__('sessions')).toEqual({})
     })
@@ -349,7 +354,7 @@ describe('hasActiveApis', () => {
         session.__set__('sessions', {})
     })
 
-    it.only('checks correct', () => {
+    it('checks correct', () => {
         const hasActiveApis = session.__get__('hasActiveApis')
         let isTrue = hasActiveApis('1234')
         expect(isTrue).toBe(true)
@@ -363,7 +368,7 @@ describe('hasActiveApis', () => {
 })
 
 describe('checkInput', () => {
-    it.only('validates correct', () => {
+    it('validates correct', () => {
         const apis = {
             youtube: '',
             reddit: ''
@@ -389,6 +394,30 @@ describe('checkInput', () => {
         expect(ok).toBe(false)
         ok = checkInput()
         expect(ok).toBe(false)
+    })
+})
+
+describe('generateAuthUrl', () => {
+    it('returns falsy with invalid input', () => {
+        const generateAuthUrl = session.__get__('generateAuthUrl')
+        let url = generateAuthUrl('yahoo', '1234')
+        expect(url).toBeFalsy()
+        url = generateAuthUrl({}, [])
+        expect(url).toBeFalsy()
+        url = generateAuthUrl(2)
+        expect(url).toBeFalsy()
+        url = generateAuthUrl()
+        expect(url).toBeFalsy()
+    })
+    it('returns url with proper input', () => {
+        const generateAuthUrl = session.__get__('generateAuthUrl')
+        const key = '1234'
+        let url = generateAuthUrl('reddit', key)
+        const token =jwt.sign({ key }, 'secret')
+        console.log(token)
+        console.log(url)
+        expect(url).toEqual(expect.stringContaining('https://www.reddit.com/api/v1/authorize?response_type=code&client_id='))
+        expect(url).toEqual(expect.stringContaining(token))
     })
 })
 

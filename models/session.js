@@ -13,7 +13,7 @@ exports.findByKey = (key) => {
 }
 
 exports.newSession = (key) => {
-    if (key) {
+    if (typeof key === 'string') {
         const apis = {}
         config.apis.map(api => {
             apis[api] = ''
@@ -24,12 +24,14 @@ exports.newSession = (key) => {
     return ''
 }
 
-exports.removeSession = ({ key }) => {
-    delete sessions[key]
+exports.removeSession = (session) => {
+    if (sessions[session.key]) {
+        delete sessions[session.key]
+    }
 }
 
 exports.responseForExisting = (session) => {
-    if (session && session.key) {
+    if (session) {
         const key = session.key
         const sessionApis = sessions[key]
         if (sessionApis) {
@@ -153,23 +155,29 @@ const checkInput = (apis, api, apiToken) => {
 }
 
 const generateAuthUrl = (api, key) => {
-    const token = jwt.sign({ key }, process.env.SECRET)
-    const template = config.url(api, token)
-    let authUrl = `${template.baseUrl}?response_type=code&`
-    iterateOverObject(template.params, (param) => {
-        const string = `${param}=${template.params[param]}&`
-        authUrl = authUrl.concat(string)
-    })
-    authUrl = authUrl.substr(0, authUrl.length - 1)
-    return authUrl
+    if (typeof api === 'string' && typeof api === 'string' && config.apis.includes(api)) {
+        const token = jwt.sign({ key }, process.env.SECRET)
+        const template = config.url(api, token)
+        let authUrl = `${template.baseUrl}?response_type=code&`
+        iterateOverObject(template.params, (param) => {
+            const string = `${param}=${template.params[param]}&`
+            authUrl = authUrl.concat(string)
+        })
+        authUrl = authUrl.substr(0, authUrl.length - 1)
+        return authUrl
+    }
+    return ''
 }
 
 
 
 const iterateOverObject = (object, action) => {
-    Object.keys(object).map(attr => {
-        action(attr)
-    })
+    const keyArray = Object.keys(object)
+    if (keyArray) {
+        keyArray.map(attr => {
+            action(attr)
+        })
+    }
 }
 
 const generateKey = () => {
