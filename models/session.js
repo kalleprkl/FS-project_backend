@@ -98,7 +98,7 @@ const sessionObject = (key) => {
 
 const setApiToken = (key, api, apiToken) => {
     const apis = sessions[key]
-    if (apis) {
+    if (checkInput(apis, api, apiToken)) {
         apis[api] = apiToken
         return true
     }
@@ -106,32 +106,50 @@ const setApiToken = (key, api, apiToken) => {
 }
 
 const getApiToken = (key, api) => {
-    if (api && key) {
-        return sessions[key][api]
+    const apis = sessions[key]
+    if (checkInput(apis, api)) {
+        return apis[api]
     }
     return ''
 }
 
 const removeApiToken = (key, api) => {
-    if (api && key) {
-        sessions[key][api] = ''
-        return true
+    const apis = sessions[key]
+    if (checkInput(apis, api)) {
+        if (apis[api]) {
+            apis[api] = ''
+            return true
+        }
     }
     return false
 }
 
 const hasActiveApis = (key) => {
     const apis = sessions[key]
-    let empty = true
-    iterateOverObject(apis, api => {
-        if (apis[api]) {
-            empty = false
+    if (apis) {
+        let empty = true
+        iterateOverObject(apis, api => {
+            if (apis[api]) {
+                empty = false
+            }
+        })
+        if (empty) {
+            return false
+        } else {
+            return true
         }
-    })
-    if (empty) {
-        return false
     }
-    return true
+    return false
+}
+
+const checkInput = (apis, api, apiToken) => {
+    if (apis && Object.keys(apis).includes(api)) {
+        if (apiToken && typeof apiToken !== 'string') {
+            return false
+        }
+        return true
+    }
+    return false
 }
 
 const generateAuthUrl = (api, key) => {
