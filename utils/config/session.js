@@ -60,7 +60,7 @@ exports.url = (api, token) => {
 
 const useTemplate = (insert) => {
     const template = {
-        method: 'post',
+        method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },

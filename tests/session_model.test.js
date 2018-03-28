@@ -48,8 +48,10 @@ describe('findByKey', () => {
     it('returns session object if key matches', () => {
         session.__set__('sessions', noActiveApis)
         expect(session.__get__('sessions')).toEqual(noActiveApis)
-        let sessionObject = session.findByKey('123')
-        expect(sessionObject).toBe('')
+        let sessionObject = session.findByKey()
+        expect(sessionObject).toBeFalsy()
+        sessionObject = session.findByKey('123')
+        expect(sessionObject).toBeFalsy()
         sessionObject = session.findByKey('1234')
         expect(sessionObject.key).toBe('1234')
         expect(Object.keys(sessionObject)).toEqual(keys)
@@ -91,9 +93,9 @@ describe('removeSession', () => {
         session.__set__('sessions', noActiveApis)
         const sessions = session.__get__('sessions')
         expect(sessions).toEqual(noActiveApis)
-        session.removeSession({ key: '123' })
+        session.removeSession('123')
         expect(sessions).toEqual(noActiveApis)
-        session.removeSession({ key: '1234' })
+        session.removeSession('1234')
         expect(session.__get__('sessions')).toEqual({})
     })
 })
@@ -106,7 +108,7 @@ describe('responseForExisting', () => {
         expect(response).toBeFalsy()
         response = session.responseForExisting('Cats!')
         expect(response).toBeFalsy()
-        response = session.responseForExisting({ key: '4321' })
+        response = session.responseForExisting('4321')
         expect(response).toBeFalsy()
     })
 
@@ -119,7 +121,7 @@ describe('responseForExisting', () => {
     })
 
     it('returns object with valid parameters (one active)', () => {
-        let response = session.responseForExisting({ key: '1234' })
+        let response = session.responseForExisting('1234')
         const expected = [
             { api: "youtube", authUrl: expect.stringContaining('https://accounts.google.com/o/oauth2/v2/auth') },
             { api: 'reddit', authUrl: '' }
@@ -128,7 +130,7 @@ describe('responseForExisting', () => {
     })
 
     it('returns object with valid parameters (both active)', () => {
-        let response = session.responseForExisting({ key: '5678' })
+        let response = session.responseForExisting('5678')
         const expected = [
             { api: "youtube", authUrl: '' },
             { api: 'reddit', authUrl: '' }
@@ -137,7 +139,7 @@ describe('responseForExisting', () => {
     })
 
     it('returns object with valid parameters (both inactive)', () => {
-        let response = session.responseForExisting({ key: '4321' })
+        let response = session.responseForExisting('4321')
         const expected = [
             { api: "youtube", authUrl: expect.stringContaining('https://accounts.google.com/o/oauth2/v2/auth') },
             { api: 'reddit', authUrl: expect.stringContaining('https://www.reddit.com/api/v1/authorize') }
@@ -146,8 +148,28 @@ describe('responseForExisting', () => {
     })
 })
 
-describe('getApiToken', async () => {
-    await it('returns token', async () => {
+describe('responseForNewSession', () => {
+    it('creates', () => {
+        const response = session.responseForNewSession()
+        const keys = Object.keys(response)
+        expect(keys.length).toBe(2)
+        expect(keys.includes('token')).toBe(true)
+        expect(keys.includes('apis')).toBe(true)
+        expect(typeof response.token === 'string').toBe(true)
+        expect(Array.isArray(response.apis)).toBe(true)
+        response.apis.map(api => {
+            if (api.api === 'reddit') {
+                expect(api.authUrl).toEqual(expect.stringContaining('https://www.reddit.com/api/v1/authorize'))
+            }
+            if (api.api === 'youtube') {
+                expect(api.authUrl).toEqual(expect.stringContaining('https://accounts.google.com/o/oauth2/v2/auth'))
+            }
+        })
+    })
+})
+
+describe('requestApiToken', () => {
+    it('returns token', async () => {
         const authServer = nock('https://www.googleapis.com')
             .post('/oauth2/v4/token')
             .reply(200, {
@@ -156,10 +178,12 @@ describe('getApiToken', async () => {
         const response = await session.requestApiToken('youtube', '1234')
         expect(response).toBe('<access_token>')
     })
-    await it('or does nothing', async () => {
+    it('or does nothing', async () => {
         let response = await session.requestApiToken('1234')
         expect(response).toBeFalsy()
         response = await session.requestApiToken()
+        expect(response).toBeFalsy()
+        response = await session.requestApiToken('skene', '1234')
         expect(response).toBeFalsy()
         const authServer = nock('https://www.googleapis.com')
             .post('/oauth2/v4/token')
@@ -367,36 +391,6 @@ describe('hasActiveApis', () => {
     })
 })
 
-describe('checkInput', () => {
-    it('validates correct', () => {
-        const apis = {
-            youtube: '',
-            reddit: ''
-        }
-        const api = 'reddit'
-        const apiToken = '<api_token>'
-        const checkInput = session.__get__('checkInput')
-        let ok = checkInput(apis, api, apiToken)
-        expect(ok).toBe(true)
-        ok = checkInput(apis, api)
-        expect(ok).toBe(true)
-        ok = checkInput('', api, apiToken)
-        expect(ok).toBe(false)
-        ok = checkInput(apis, '', apiToken)
-        expect(ok).toBe(false)
-        ok = checkInput(apis, apis)
-        expect(ok).toBe(false)
-        ok = checkInput(apis, api, {})
-        expect(ok).toBe(false)
-        ok = checkInput({})
-        expect(ok).toBe(false)
-        ok = checkInput(apis, {})
-        expect(ok).toBe(false)
-        ok = checkInput()
-        expect(ok).toBe(false)
-    })
-})
-
 describe('generateAuthUrl', () => {
     it('returns falsy with invalid input', () => {
         const generateAuthUrl = session.__get__('generateAuthUrl')
@@ -414,10 +408,69 @@ describe('generateAuthUrl', () => {
         const key = '1234'
         let url = generateAuthUrl('reddit', key)
         const token =jwt.sign({ key }, 'secret')
-        console.log(token)
-        console.log(url)
         expect(url).toEqual(expect.stringContaining('https://www.reddit.com/api/v1/authorize?response_type=code&client_id='))
         expect(url).toEqual(expect.stringContaining(token))
+    })
+})
+
+describe('validateInput', () => {
+
+    const content = {
+        '1234': {
+            youtube: '',
+            reddit: '<api_token>'
+        }
+    }
+
+    beforeAll(() => {
+        session.__set__('sessions', content)
+    })
+
+    it('validates proper', () => {
+        const sessions = session.__get__('sessions')
+        expect(sessions).toEqual(content)
+        const validateInput = session.__get__('validateInput')
+        let valid = validateInput({
+            key: '1234',
+            api: 'reddit',
+            code: '<code>',
+            apiToken: '<api_token>'
+        })
+        expect(valid).toBe(true)
+        valid = validateInput({
+            key: '1234',
+            api: 'reddit',
+            code: '<code>',
+            apiToken: {}
+        })
+        expect(valid).toBe(false)
+        valid = validateInput({
+            key: '123',
+            api: 'reddit',
+            code: '<code>',
+            apiToken: '<api_token>'
+        })
+        expect(valid).toBe(false)
+        valid = validateInput({
+            key: '1234',
+            api: '4chan',
+            code: '<code>',
+            apiToken: '<api_token>'
+        })
+        expect(valid).toBe(false)
+        valid = validateInput({
+            key: '1234',
+            api: 'reddit',
+            code: 3,
+            apiToken: '<api_token>'
+        })
+        expect(valid).toBe(false)
+        valid = validateInput({})
+        expect(valid).toBe(false)
+        valid = validateInput(67)
+        expect(valid).toBe(false)
+        valid = validateInput()
+        expect(valid).toBe(false)
     })
 })
 

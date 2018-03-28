@@ -2,17 +2,18 @@ const jwt = require('jsonwebtoken')
 const axios = require('axios')
 const config = require('../utils/config/session')
 
-let sessions = {}   //not const because tests
-
+let sessions = {}               //not const because tests
+    
 exports.findByKey = (key) => {
-    const apis = sessions[key]
-    if (apis) {
+    if (validateInput({ key })) {
+        const apis = sessions[key]
         return sessionObject(key)
     }
     return ''
 }
 
 exports.newSession = (key) => {
+    // can't use validateInput because it checks if the key is in sessions
     if (typeof key === 'string') {
         const apis = {}
         config.apis.map(api => {
@@ -24,34 +25,33 @@ exports.newSession = (key) => {
     return ''
 }
 
-exports.removeSession = (session) => {
-    if (sessions[session.key]) {
-        delete sessions[session.key]
+exports.removeSession = (key) => {
+    if (validateInput({ key })) {
+        delete sessions[key]
+        return true
     }
+    return false
 }
 
-exports.responseForExisting = (session) => {
-    if (session) {
-        const key = session.key
+exports.responseForExisting = (key) => {
+    if (validateInput({ key })) {
         const sessionApis = sessions[key]
-        if (sessionApis) {
-            const apis = []
-            iterateOverObject(sessionApis, (api) => {
-                if (!sessionApis[api]) {
-                    const authUrl = generateAuthUrl(api, key)
-                    apis.push({
-                        api,
-                        authUrl
-                    })
-                } else {
-                    apis.push({
-                        api,
-                        authUrl: ''
-                    })
-                }
-            })
-            return { apis }
-        }
+        const apis = []
+        iterateOverObject(sessionApis, (api) => {
+            if (!sessionApis[api]) {
+                const authUrl = generateAuthUrl(api, key)
+                apis.push({
+                    api,
+                    authUrl
+                })
+            } else {
+                apis.push({
+                    api,
+                    authUrl: ''
+                })
+            }
+        })
+        return { apis }
     }
     return ''
 }
@@ -66,10 +66,10 @@ exports.responseForNewSession = () => {
 }
 
 exports.requestApiToken = async (api, code) => {
-    if (api && code) {
+    if (validateInput({ api, code })) {
         const request = config.tokenRequest(api, code)
         try {
-            const response = await axios(request)
+            const response = await axios.post(request.url, request)
             return response.data.access_token
         } catch (error) {
         }
@@ -78,7 +78,7 @@ exports.requestApiToken = async (api, code) => {
 }
 
 const sessionObject = (key) => {
-    if (key) {
+    if (validateInput({ key })) {
         return {
             key,
             setApiToken: (api, apiToken) => {
@@ -99,25 +99,27 @@ const sessionObject = (key) => {
 }
 
 const setApiToken = (key, api, apiToken) => {
-    const apis = sessions[key]
-    if (checkInput(apis, api, apiToken)) {
-        apis[api] = apiToken
-        return true
+    if (validateInput({ key, api, apiToken })) {
+        const apis = sessions[key]
+        if (apis) {
+            apis[api] = apiToken
+            return true
+        }
     }
     return false
 }
 
 const getApiToken = (key, api) => {
-    const apis = sessions[key]
-    if (checkInput(apis, api)) {
+    if (validateInput({ key, api })) {
+        const apis = sessions[key]
         return apis[api]
     }
     return ''
 }
 
 const removeApiToken = (key, api) => {
-    const apis = sessions[key]
-    if (checkInput(apis, api)) {
+    if (validateInput({ key, api })) {
+        const apis = sessions[key]
         if (apis[api]) {
             apis[api] = ''
             return true
@@ -127,8 +129,8 @@ const removeApiToken = (key, api) => {
 }
 
 const hasActiveApis = (key) => {
-    const apis = sessions[key]
-    if (apis) {
+    if (validateInput({ key })) {
+        const apis = sessions[key]
         let empty = true
         iterateOverObject(apis, api => {
             if (apis[api]) {
@@ -144,18 +146,8 @@ const hasActiveApis = (key) => {
     return false
 }
 
-const checkInput = (apis, api, apiToken) => {
-    if (apis && Object.keys(apis).includes(api)) {
-        if (apiToken && typeof apiToken !== 'string') {
-            return false
-        }
-        return true
-    }
-    return false
-}
-
 const generateAuthUrl = (api, key) => {
-    if (typeof api === 'string' && typeof api === 'string' && config.apis.includes(api)) {
+    if (validateInput({ api }) && typeof key === 'string') {
         const token = jwt.sign({ key }, process.env.SECRET)
         const template = config.url(api, token)
         let authUrl = `${template.baseUrl}?response_type=code&`
@@ -169,11 +161,55 @@ const generateAuthUrl = (api, key) => {
     return ''
 }
 
+const validateInput = (input) => {
+    if (input) {
+        const inputKeys = Object.keys(input)
+        if (Array.isArray(inputKeys) && inputKeys.length > 0) {
+            let valid = true
+            for (let i = 0; i < inputKeys.length; i++) {
+                const key = inputKeys[i]
+                const validator = validators[key]
+                if (!validator || !validator(input[key])) {
+                    return false
+                }
+            }
+            return true
+        }
+        return false
+    }
+    return false
+}
 
+const validators = {
+    key: (key) => {
+        if (typeof key === 'string' && sessions[key]) {
+            return true
+        }
+        return false
+    },
+    api: (api) => {
+        if (typeof api === 'string' && config.apis.includes(api)) {
+            return true
+        }
+        return false
+    },
+    code: (code) => {
+        if (typeof code === 'string') {
+            return true
+        }
+        return false
+    },
+    apiToken: (apiToken) => {
+        if (typeof apiToken === 'string') {
+            return true
+        }
+        return false
+    }
+}
 
 const iterateOverObject = (object, action) => {
     const keyArray = Object.keys(object)
-    if (keyArray) {
+    if (Array.isArray(keyArray)) {
         keyArray.map(attr => {
             action(attr)
         })

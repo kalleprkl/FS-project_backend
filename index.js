@@ -13,7 +13,7 @@ if (process.env.NODE_ENV !== 'production') {
     require('dotenv').config()
 }
 
-mongoose
+/*mongoose
     .connect(process.env.MONGODB_URI)
     .then(() => {
         console.log('connected to database')
@@ -22,7 +22,7 @@ mongoose
         console.log(err)
     })
 
-mongoose.Promise = global.Promise
+mongoose.Promise = global.Promise*/
 
 app.use(cors())
 app.use(bodyParser.json())
@@ -39,8 +39,10 @@ server.listen(port, () => {
     console.log(`server running on port ${port}`)
 })
 
-server.on('close', () => {
+/*server.on('close', () => {
     mongoose.connection.close()
-})
+})*/
+
+module.exports = { app, server }
 
 
