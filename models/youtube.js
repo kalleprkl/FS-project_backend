@@ -12,8 +12,15 @@ exports.getContent = async (token) => {
     }
 }
 
+const baseUrl = (scope, mine, maxResults, ) => {
+
+}
+
+    
+
 const getMyChannels = async (token) => {
     let channels = []
+    
     try {
         const response = await axios({
             url: 'https://www.googleapis.com/youtube/v3/subscriptions/?mine=true&part=snippet%2CcontentDetails',
@@ -26,6 +33,11 @@ const getMyChannels = async (token) => {
         console.log('api get error')
     }
     return channels
+}
+
+const address = {
+    baseUrl: 'https://www.googleapis.com/youtube/v3',
+
 }
 
 const getChannelPlaylists = async (token, channels) => {
@@ -47,6 +59,8 @@ const getChannelPlaylists = async (token, channels) => {
     }
     return playlists
 }
+
+
 
 const getPlaylistVideos = async (token, playlists) => {
     let videos = []

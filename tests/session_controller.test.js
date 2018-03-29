@@ -128,8 +128,9 @@ describe('/auth/:api', () => {
 
 
         nock('https://www.googleapis.com')
+            //.log(console.log)
             .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-            .post('/oauth2/v4/token', body)
+            .post('/oauth2/v4/token', "grant_type=authorization_code&code=marabou&redirect_uri=http://localhost:5000/auth/youtube")
             .reply(200, {
                 access_token: '<access_token>'
             })

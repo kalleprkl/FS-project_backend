@@ -1,9 +1,10 @@
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
+axios.defaults.adapter = require('axios/lib/adapters/http')     //ugly from https://github.com/axios/axios/issues/305
 const config = require('../utils/config/session')
 
-let sessions = {}               //not const because tests
-    
+let sessions = {}        //not const because tests
+
 exports.findByKey = (key) => {
     if (validateInput({ key })) {
         const apis = sessions[key]
@@ -69,7 +70,7 @@ exports.requestApiToken = async (api, code) => {
     if (validateInput({ api, code })) {
         const request = config.tokenRequest(api, code)
         try {
-            const response = await axios.post(request.url, request)
+            const response = await axios.post(request.url, request.data, { headers: request.headers, auth: request.auth })
             return response.data.access_token
         } catch (error) {
         }
