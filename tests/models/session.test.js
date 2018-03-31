@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken')
 const rewire = require('rewire')
-const session = rewire('../models/session')
+const session = rewire('../../models/session')
 const nock = require('nock')
 
 session.__set__({

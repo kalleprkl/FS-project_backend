@@ -2,9 +2,7 @@ const nock = require('nock')
 const jwt = require('jsonwebtoken')
 const rewire = require('rewire')
 const request = require('supertest')
-const { app, server } = require('../index')
-const session = rewire('../models/session')
-const router = rewire('../controllers/session')
+const { app, server } = require('../../index')
 require('dotenv').config()
 
 afterAll(() => {
