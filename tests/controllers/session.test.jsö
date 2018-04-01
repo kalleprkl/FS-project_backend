@@ -1,6 +1,5 @@
 const nock = require('nock')
 const jwt = require('jsonwebtoken')
-const rewire = require('rewire')
 const request = require('supertest')
 const { app, server } = require('../../index')
 require('dotenv').config()
@@ -109,22 +108,9 @@ describe('/auth', () => {
 })
 
 describe('/auth/:api', () => {
-    it('doesnt throw errors with nock because i didnt match body and do the other thing', async () => {
+    it('redirects, exists i guess', async () => {
         const token = jwt.sign({ key: '1234' }, process.env.SECRET)
-        const body = {
-            "method": "POST"
-            , "headers": {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            "url": "https://www.googleapis.com/oauth2/v4/token",
-            "auth": {
-                "username": process.env.YOUTUBE_CLIENT_ID,
-                "password": process.env.YOUTUBE_CLIENT_SECRET
-            },
-            "data": "grant_type=authorization_code&code=marabou&redirect_uri=http://localhost:5000/auth/youtube"
-        }
-
-
+        
         nock('https://www.googleapis.com')
             //.log(console.log)
             .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
@@ -161,7 +147,7 @@ describe('/auth revisited, the key inside the token should now be known', () => 
 
 describe('/auth/logout/:api', () => {
 
-    it('logs out', async () => {
+    it('removes previously added token from sessions', async () => {
         const token = jwt.sign({ key: '1234' }, process.env.SECRET)
         response = await request(app)
             .get('/auth/logout/youtube')
@@ -178,7 +164,6 @@ describe('/auth/logout/:api', () => {
                 expect(api.authUrl).toEqual(expect.stringContaining('https://accounts.google.com/o/oauth2/v2/auth'))
             }
         })
-        console.log(response.status)
     })
 
     it('response for valid but unknown..', done => {
@@ -206,7 +191,7 @@ describe('/auth/logout/:api', () => {
             })
     })
 
-    it('doesnt log out if in doesnt know who to log out', async () => {
+    it('doesnt log out if it doesnt know who to log out', async () => {
         response = await request(app)
             .get('/auth/logout/youtube')
             .set('Authorization', `Bearer shits/'ngigles`)

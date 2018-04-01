@@ -2,12 +2,33 @@ const jwt = require('jsonwebtoken')
 const axios = require('axios')
 axios.defaults.adapter = require('axios/lib/adapters/http')     //ugly from https://github.com/axios/axios/issues/305
 const config = require('../utils/config/session')
+const { validateInput, iterateOverObject, generateKey } = require('./utils')
 
-let sessions = {}        //not const because tests
+const sessions = {
+    sessions: {},
+    set: (injection) => {
+        sessions.sessions = injection
+    },
+    new: (key, apis) => {
+        sessions.sessions[key] = apis
+    },
+    has: (key) => {
+        return sessions.sessions[key] ? true : false
+    },
+    get: (key) => {
+        return sessions.sessions[key]
+    },
+    forget: (key, api) => {
+        sessions.sessions[key][api] = ''
+    },
+    remove: (key) => {
+        delete sessions.sessions[key]
+    }
+}
+
 
 exports.findByKey = (key) => {
-    if (validateInput({ key })) {
-        const apis = sessions[key]
+    if (validateInput({ key }) && sessions.has(key)) {
         return sessionObject(key)
     }
     return ''
@@ -20,23 +41,23 @@ exports.newSession = (key) => {
         config.apis.map(api => {
             apis[api] = ''
         })
-        sessions[key] = apis
+        sessions.new(key, apis)
         return sessionObject(key)
     }
     return ''
 }
 
 exports.removeSession = (key) => {
-    if (validateInput({ key })) {
-        delete sessions[key]
+    if (validateInput({ key }) && sessions.has(key)) {
+        sessions.remove(key)
         return true
     }
     return false
 }
 
 exports.responseForExisting = (key) => {
-    if (validateInput({ key })) {
-        const sessionApis = sessions[key]
+    if (validateInput({ key }) && sessions.has(key)) {
+        const sessionApis = sessions.get(key)
         const apis = []
         iterateOverObject(sessionApis, (api) => {
             if (!sessionApis[api]) {
@@ -79,7 +100,7 @@ exports.requestApiToken = async (api, code) => {
 }
 
 const sessionObject = (key) => {
-    if (validateInput({ key })) {
+    if (validateInput({ key }) && sessions.has(key)) {
         return {
             key,
             setApiToken: (api, apiToken) => {
@@ -100,8 +121,8 @@ const sessionObject = (key) => {
 }
 
 const setApiToken = (key, api, apiToken) => {
-    if (validateInput({ key, api, apiToken })) {
-        const apis = sessions[key]
+    if (validateInput({ key, api, apiToken }) && sessions.has(key)) {
+        const apis = sessions.get(key)
         if (apis) {
             apis[api] = apiToken
             return true
@@ -111,27 +132,24 @@ const setApiToken = (key, api, apiToken) => {
 }
 
 const getApiToken = (key, api) => {
-    if (validateInput({ key, api })) {
-        const apis = sessions[key]
+    if (validateInput({ key, api }) && sessions.has(key)) {
+        const apis = sessions.get(key)
         return apis[api]
     }
     return ''
 }
 
 const removeApiToken = (key, api) => {
-    if (validateInput({ key, api })) {
-        const apis = sessions[key]
-        if (apis[api]) {
-            apis[api] = ''
-            return true
-        }
+    if (validateInput({ key, api }) && sessions.has(key)) {
+        sessions.forget(key, api)
+        return true
     }
     return false
 }
 
 const hasActiveApis = (key) => {
-    if (validateInput({ key })) {
-        const apis = sessions[key]
+    if (validateInput({ key }) && sessions.has(key)) {
+        const apis = sessions.get(key)
         let empty = true
         iterateOverObject(apis, api => {
             if (apis[api]) {
@@ -162,66 +180,11 @@ const generateAuthUrl = (api, key) => {
     return ''
 }
 
-const validateInput = (input) => {
-    if (input) {
-        const inputKeys = Object.keys(input)
-        if (Array.isArray(inputKeys) && inputKeys.length > 0) {
-            let valid = true
-            for (let i = 0; i < inputKeys.length; i++) {
-                const key = inputKeys[i]
-                const validator = validators[key]
-                if (!validator || !validator(input[key])) {
-                    return false
-                }
-            }
-            return true
-        }
-        return false
-    }
-    return false
-}
 
-const validators = {
-    key: (key) => {
-        if (typeof key === 'string' && sessions[key]) {
-            return true
-        }
-        return false
-    },
-    api: (api) => {
-        if (typeof api === 'string' && config.apis.includes(api)) {
-            return true
-        }
-        return false
-    },
-    code: (code) => {
-        if (typeof code === 'string') {
-            return true
-        }
-        return false
-    },
-    apiToken: (apiToken) => {
-        if (typeof apiToken === 'string') {
-            return true
-        }
-        return false
-    }
-}
 
-const iterateOverObject = (object, action) => {
-    const keyArray = Object.keys(object)
-    if (Array.isArray(keyArray)) {
-        keyArray.map(attr => {
-            action(attr)
-        })
-    }
-}
 
-const generateKey = () => {
-    let string = ''
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    for (let i = 0; i < 8; i++)
-        string += possible.charAt(Math.floor(Math.random() * possible.length))
-    return string
-}
+
+
+
+
 

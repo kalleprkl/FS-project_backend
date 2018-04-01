@@ -1,4 +1,5 @@
 const axios = require('axios')
+const { validateInput } = require('./utils')
 
 exports.getContent = async (token) => {
     if (validateInput({ token })) {
@@ -92,7 +93,7 @@ const getPlaylistVideos = async (token, playlists) => {
     return ''
 }
 
-const validateInput = (input) => {
+/* const validateInput = (input) => {
     if (input) {
         const inputKeys = Object.keys(input)
         if (Array.isArray(inputKeys) && inputKeys.length > 0) {
@@ -109,9 +110,9 @@ const validateInput = (input) => {
         return false
     }
     return false
-}
+} */
 
-const validators = {
+/* const validators = {
     token: (token) => {
         if (typeof token === 'string') {
             return true
@@ -130,5 +131,5 @@ const validators = {
         }
         return false
     }
-}
+} */
 

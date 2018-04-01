@@ -1,7 +1,13 @@
 const jwt = require('jsonwebtoken')
 const rewire = require('rewire')
-const session = rewire('../../models/session')
 const nock = require('nock')
+const session = rewire('../../models/session')
+const utils = require('../../models/utils')
+/* session.__set__('utils', utils)
+utils.__set__('Session', session)
+console.log(utils)
+session.__set__('utils', utils)
+console.log(session.__get__('utils')) */
 
 session.__set__({
     process: {
@@ -42,12 +48,11 @@ const keys = [
 ]
 
 
-
-
 describe('findByKey', () => {
-    it('returns session object if key matches', () => {
-        session.__set__('sessions', noActiveApis)
-        expect(session.__get__('sessions')).toEqual(noActiveApis)
+    it.only('returns session object if key matches', () => {
+        const sessions = session.__get__('sessions')
+        sessions.set(noActiveApis)
+        expect(sessions.sessions).toEqual(noActiveApis)
         let sessionObject = session.findByKey()
         expect(sessionObject).toBeFalsy()
         sessionObject = session.findByKey('123')
@@ -193,7 +198,7 @@ describe('requestApiToken', () => {
     })
 })
 
-//WTF? noActiveApis out of scope or something.
+//WTF? noActiveApis out of scope or something
 
 const stillNoActiveApis = {
     '1234': {
@@ -413,7 +418,7 @@ describe('generateAuthUrl', () => {
     })
 })
 
-describe('validateInput', () => {
+/* describe('validateInput', () => {
 
     const content = {
         '1234': {
@@ -472,7 +477,7 @@ describe('validateInput', () => {
         valid = validateInput()
         expect(valid).toBe(false)
     })
-})
+}) */
 
 
 

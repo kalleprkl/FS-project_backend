@@ -15,16 +15,16 @@ const nockHelper = (token, path, query, reply) => {
         })
 }
 
-const nockBadResponse = (path, query) => {
+const nockBadRequest = (path, query) => {
     nock('https://www.googleapis.com')
         .get(path)
         .query(query)
         .reply(500)
 }
 
-const arrayHelper = (action) => {
+const arrayHelper = (count, action) => {
     const array = []
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < count; i++) {
         const item = action(i)
         array.push(item)
     }
@@ -75,7 +75,7 @@ describe('getPlaylistVideos', () => {
     })
 
     it('handles rejection', async () => {
-        nockBadResponse(path, query)
+        nockBadRequest(path, query)
         const videos = await getPlaylistVideos('<bad_token>', playlists)
         expect(videos).toBeFalsy()
     })
@@ -118,7 +118,7 @@ describe('getChannelPlaylists', () => {
     })
 
     it('handles rejection', async () => {
-        nockBadResponse(path, query)
+        nockBadRequest(path, query)
         const playlists = await getChannelPlaylists('<bad_token>', channels)
         expect(playlists).toBeFalsy()
     })
@@ -160,7 +160,7 @@ describe('getMyChannels', () => {
     })
 
     it('handles rejection', async () => {
-        nockBadResponse(path, query)
+        nockBadRequest(path, query)
         const channels = await getMyChannels('<bad_token>')
         expect(channels).toBeFalsy()
     })
@@ -253,7 +253,7 @@ describe('getContent', () => {
                 ]
             }
         )
-        nockBadResponse(
+        nockBadRequest(
             '/youtube/v3/playlists',
             {
                 channelId: '1',
