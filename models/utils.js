@@ -81,3 +81,12 @@ exports.generateKey = () => {
     return string
 }
 
+const arrayHelper = (count, action) => {
+    const array = []
+    for (let i = 0; i < count; i++) {
+        const item = action(i)
+        array.push(item)
+    }
+    return array
+}
+

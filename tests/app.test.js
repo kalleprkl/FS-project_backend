@@ -1,14 +1,15 @@
+require('dotenv').config()
 const nock = require('nock')
 const jwt = require('jsonwebtoken')
 const request = require('supertest')
-const { app, server } = require('../../index')
-require('dotenv').config()
+const { app, server } = require('../index')
+const { nockHelper, nockBadRequest } = require('./helpers')
 
 afterAll(() => {
     server.close()
 })
 
-describe('/auth', () => {
+describe('GET /auth', () => {
 
     it('response for valid but unknown token contains authUrl for each api', done => {
         const token = jwt.sign({ key: '1234' }, process.env.SECRET)
@@ -107,13 +108,13 @@ describe('/auth', () => {
     })
 })
 
-describe('/auth/:api', () => {
+describe('GET /auth/:api', () => {
     it('redirects, exists i guess', async () => {
         const token = jwt.sign({ key: '1234' }, process.env.SECRET)
-        
+
         nock('https://www.googleapis.com')
             //.log(console.log)
-            .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+            .defaultReplyHeaders({ 'access-control-allow-origin': '*' })    //?
             .post('/oauth2/v4/token', "grant_type=authorization_code&code=marabou&redirect_uri=http://localhost:5000/auth/youtube")
             .reply(200, {
                 access_token: '<access_token>'
@@ -126,7 +127,7 @@ describe('/auth/:api', () => {
     })
 })
 
-describe('/auth revisited, the key inside the token should now be known', () => {
+describe('GET /auth revisited, the key inside the token should now be known', () => {
     it('response for valid and known token contains authUrl for reddit and no token,', async () => {
         const token = jwt.sign({ key: '1234' }, process.env.SECRET)
         const response = await request(app)
@@ -145,7 +146,93 @@ describe('/auth revisited, the key inside the token should now be known', () => 
     })
 })
 
-describe('/auth/logout/:api', () => {
+describe('GET /data/youtube', () => {
+
+    
+
+    nockHelper.youtube(
+        '<access_token>',
+        '/youtube/v3/playlistItems',
+        {
+            playlistId: '2',
+            maxResults: '1',
+            part: 'snippet,contentDetails'
+        },
+        {
+            items: [
+                {
+                    snippet: {
+                        resourceId: { videoId: '3' }
+                    }
+                }
+            ]
+        }
+    )
+    nockHelper.youtube(
+        '<access_token>',
+        '/youtube/v3/playlists',
+        {
+            channelId: '1',
+            maxResults: '25',
+            part: 'snippet,contentDetails'
+        },
+        {
+            items: [
+                { id: '2' },
+            ]
+        }
+    )
+    nockHelper.youtube(
+        '<access_token>',
+        '/youtube/v3/subscriptions',
+        {
+            mine: 'true',
+            part: 'snippet,contentDetails'
+        },
+        {
+            items: [
+                {
+                    snippet: {
+                        resourceId: {
+                            channelId: '1'
+                        }
+                    }
+                }
+            ]
+        }
+    )
+    it('', async () => {
+        const token = jwt.sign({ key: '1234' }, process.env.SECRET)
+        const response = await request(app)
+            .get('/data/youtube')
+            .set('Authorization', `Bearer ${token}`)
+            .expect(200)
+        expect(response.body).toEqual(['3'])
+        console.log(response.body)
+    })
+})
+
+/* describe('GET /data/reddit', () => {
+
+    const path = '/best'
+    const reply = {
+        data: {
+            children: ['1', '2']
+        }
+    }
+    const token = jwt.sign({ key: '1234' }, process.env.SECRET)
+
+    it('', async () => {
+        console.log('APP', token)
+        nockHelper.reddit(token, path, reply)
+        const response = await request(app)
+            .get('/data/reddit')
+            .set('Authorization', `Bearer ${token}`)
+        console.log()
+    })
+}) */
+
+describe('GET /auth/logout/:api', () => {
 
     it('removes previously added token from sessions', async () => {
         const token = jwt.sign({ key: '1234' }, process.env.SECRET)

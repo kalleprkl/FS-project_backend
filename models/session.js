@@ -26,6 +26,7 @@ const sessions = {
 
 
 exports.findByKey = (key) => {
+    console.log('SESSIONS', sessions.sessions)
     if (validateInput({ key }) && sessions.has(key)) {
         return sessionObject(key)
     }
@@ -129,6 +130,7 @@ const setApiToken = (key, api, apiToken) => {
 }
 
 const getApiToken = (key, api) => {
+    console.log('getApiToken', sessions.sessions)
     if (validateInput({ key, api }) && sessions.has(key)) {
         const apis = sessions.get(key)
         return apis[api]

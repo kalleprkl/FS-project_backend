@@ -1,35 +1,7 @@
 const nock = require('nock')
 const rewire = require('rewire')
 const youtube = rewire('../../models/youtube')
-
-const nockHelper = (token, path, query, reply) => {
-    nock('https://www.googleapis.com', {
-        reqheaders: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-        .get(path)
-        .query(query)
-        .reply((uri, requestBody) => {
-            return [200, reply]
-        })
-}
-
-const nockBadRequest = (path, query) => {
-    nock('https://www.googleapis.com')
-        .get(path)
-        .query(query)
-        .reply(500)
-}
-
-const arrayHelper = (count, action) => {
-    const array = []
-    for (let i = 0; i < count; i++) {
-        const item = action(i)
-        array.push(item)
-    }
-    return array
-}
+const { nockHelper, nockBadRequest } = require('../helpers')
 
 const token = '<api_token>'
 
@@ -54,7 +26,7 @@ describe('getPlaylistVideos', () => {
     const playlists = ['1']
 
     it('works with proper input', async () => {
-        nockHelper(token, path, query, reply)
+        nockHelper.youtube(token, path, query, reply)
         const videos = await getPlaylistVideos(token, playlists)
         expect(Array.isArray(videos)).toBe(true)
         expect(videos.length).toBe(1)
@@ -75,7 +47,7 @@ describe('getPlaylistVideos', () => {
     })
 
     it('handles rejection', async () => {
-        nockBadRequest(path, query)
+        nockBadRequest.youtube('https://www.googleapis.com', path, query)
         const videos = await getPlaylistVideos('<bad_token>', playlists)
         expect(videos).toBeFalsy()
     })
@@ -99,7 +71,7 @@ describe('getChannelPlaylists', () => {
     const channels = ['1']
 
     it('works with proper input', async () => {
-        nockHelper(token, path, query, reply)
+        nockHelper.youtube(token, path, query, reply)
         const playlists = await getChannelPlaylists(token, channels)
         expect(playlists).toEqual(expect.arrayContaining(['redlettermedia', 'magztv']))
     })
@@ -118,7 +90,7 @@ describe('getChannelPlaylists', () => {
     })
 
     it('handles rejection', async () => {
-        nockBadRequest(path, query)
+        nockBadRequest.youtube(path, query)
         const playlists = await getChannelPlaylists('<bad_token>', channels)
         expect(playlists).toBeFalsy()
     })
@@ -145,7 +117,7 @@ describe('getMyChannels', () => {
     }
 
     it('works with proper input', async () => {
-        nockHelper(token, path, query, reply)
+        nockHelper.youtube(token, path, query, reply)
         const channels = await getMyChannels(token)
         expect(channels).toEqual(expect.arrayContaining(['1']))
     })
@@ -160,7 +132,7 @@ describe('getMyChannels', () => {
     })
 
     it('handles rejection', async () => {
-        nockBadRequest(path, query)
+        nockBadRequest.youtube(path, query)
         const channels = await getMyChannels('<bad_token>')
         expect(channels).toBeFalsy()
     })
@@ -169,7 +141,7 @@ describe('getMyChannels', () => {
 describe('getContent', () => {
 
     it('works with proper input', async () => {
-        nockHelper(
+        nockHelper.youtube(
             token,
             '/youtube/v3/playlistItems',
             {
@@ -187,7 +159,7 @@ describe('getContent', () => {
                 ]
             }
         )
-        nockHelper(
+        nockHelper.youtube(
             token,
             '/youtube/v3/playlists',
             {
@@ -201,7 +173,7 @@ describe('getContent', () => {
                 ]
             }
         )
-        nockHelper(
+        nockHelper.youtube(
             token,
             '/youtube/v3/subscriptions',
             {
@@ -235,7 +207,7 @@ describe('getContent', () => {
 
     it('handles rejection', async () => {
 
-        nockHelper(
+        nockHelper.youtube(
             token,
             '/youtube/v3/playlistItems',
             {
@@ -253,7 +225,7 @@ describe('getContent', () => {
                 ]
             }
         )
-        nockBadRequest(
+        nockBadRequest.youtube(
             '/youtube/v3/playlists',
             {
                 channelId: '1',
@@ -261,7 +233,7 @@ describe('getContent', () => {
                 part: 'snippet,contentDetails'
             }
         )
-        nockHelper(
+        nockHelper.youtube(
             token,
             '/youtube/v3/subscriptions',
             {

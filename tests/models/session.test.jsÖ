@@ -252,8 +252,11 @@ describe('sessionObject', () => {
         }
     }
 
-    it('does what it do', () => {
+    beforeAll(() => {
         sessions.sessions = content
+    })
+
+    it('does what it do', () => {
         expect(sessions.sessions).toEqual(content)
         const key = '1234'
         const sessionObject = getSessionObject(key)
