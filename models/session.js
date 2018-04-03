@@ -4,6 +4,7 @@ axios.defaults.adapter = require('axios/lib/adapters/http')     //ugly from http
 const config = require('../utils/config/session')
 const { validateInput, iterateOverObject, generateKey } = require('./utils')
 
+//state of the controller. could be moved to db
 const sessions = {
     sessions: {},
     new: (key, apis) => {
