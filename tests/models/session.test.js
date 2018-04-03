@@ -47,12 +47,63 @@ const keys = [
     'hasActiveApis'
 ]
 
+const sessions = session.__get__('sessions')
+
+describe('sessions', () => {
+
+    const apis = {
+        youtube: '<api_token>',
+        reddit: ''
+    }
+
+    it('creates new session', () => {
+        expect(sessions.sessions).toEqual({})
+        sessions.new('1234', apis)
+        const expected = {
+            '1234': apis
+        }
+        expect(sessions.sessions).toEqual(expected)
+    })
+
+    it('checks if given key has a session', () => {
+        const has = sessions.has('1234')
+        expect(has).toBe(true)
+    })
+
+    it('fetches sessions corresponding to the key', () => {
+        const got = sessions.get('1234')
+        expect(got).toEqual(apis)
+    })
+
+    it('removes api token', () => {
+        sessions.forget('1234', 'youtube')
+        const expected = {
+            '1234': {
+                youtube: '',
+                reddit: ''
+            }
+        }
+        expect(sessions.sessions).toEqual(expected)
+    })
+
+    it('removes session', () => {
+        sessions.remove('1234')
+        expect(sessions.sessions).toEqual({})
+    })
+})
 
 describe('findByKey', () => {
-    it.only('returns session object if key matches', () => {
-        const sessions = session.__get__('sessions')
-        sessions.set(noActiveApis)
-        expect(sessions.sessions).toEqual(noActiveApis)
+
+    const content = {
+        '1234': {
+            youtube: '',
+            reddit: ''
+        }
+    }
+
+    it('returns session object if key matches', () => {
+        sessions.sessions = content
+        expect(sessions.sessions).toEqual(content)
         let sessionObject = session.findByKey()
         expect(sessionObject).toBeFalsy()
         sessionObject = session.findByKey('123')
@@ -65,50 +116,56 @@ describe('findByKey', () => {
 
 describe('newSession', () => {
 
-    beforeEach(() => {
-        session.__set__('sessions', {})
-    })
-    afterAll(() => {
-        session.__set__('sessions', {})
-    })
-
     it('does nothing without parameter', () => {
-        const sessions = session.__get__('sessions')
-        expect(sessions).toEqual({})
+        sessions.sessions = {}
+        expect(sessions.sessions).toEqual({})
         let sessionObject = session.newSession()
-        expect(sessions).toEqual({})
+        expect(sessions.sessions).toEqual({})
         expect(sessionObject).toBeFalsy()
         sessionObject = session.newSession({})
-        expect(sessions).toEqual({})
+        expect(sessions.sessions).toEqual({})
         expect(sessionObject).toBeFalsy()
     })
 
     it('creates new session and returns session object', () => {
-        const sessions = session.__get__('sessions')
-        expect(sessions).toEqual({})
+        expect(sessions.sessions).toEqual({})
         const sessionObject = session.newSession('1234')
-        expect(sessions).toEqual(noActiveApis)
+        expect(sessions.sessions).toEqual(noActiveApis)
         expect(sessionObject.key).toBe('1234')
         expect(Object.keys(sessionObject)).toEqual(keys)
     })
 })
 
 describe('removeSession', () => {
+
+    const content = {
+        '1234': {
+            youtube: '',
+            reddit: ''
+        }
+    }
+
     it('removes session', () => {
-        session.__set__('sessions', noActiveApis)
-        const sessions = session.__get__('sessions')
-        expect(sessions).toEqual(noActiveApis)
+        sessions.sessions = content
+        expect(sessions.sessions).toEqual(content)
         session.removeSession('123')
-        expect(sessions).toEqual(noActiveApis)
+        expect(sessions.sessions).toEqual(content)
         session.removeSession('1234')
-        expect(session.__get__('sessions')).toEqual({})
+        expect(sessions.sessions).toEqual({})
     })
 })
 
 describe('responseForExisting', () => {
 
+    const content = {
+        '1234': {
+            youtube: '',
+            reddit: ''
+        }
+    }
+
     it('returns falsy with invalid parameters', () => {
-        session.__set__('sessions', noActiveApis)
+        sessions.sessions = content
         let response = session.responseForExisting()
         expect(response).toBeFalsy()
         response = session.responseForExisting('Cats!')
@@ -117,15 +174,23 @@ describe('responseForExisting', () => {
         expect(response).toBeFalsy()
     })
 
-    beforeEach(() => {
-        session.__set__('sessions', activeApis)
-    })
-
-    afterAll(() => {
-        session.__set__('sessions', {})
-    })
+    const content2 = {
+        '1234': {
+            youtube: '',
+            reddit: '<apiToken>'
+        },
+        '5678': {
+            youtube: '<apiToken>',
+            reddit: '<apiToken>'
+        },
+        '4321': {
+            youtube: '',
+            reddit: ''
+        }
+    }
 
     it('returns object with valid parameters (one active)', () => {
+        sessions.sessions = content2
         let response = session.responseForExisting('1234')
         const expected = [
             { api: "youtube", authUrl: expect.stringContaining('https://accounts.google.com/o/oauth2/v2/auth') },
@@ -198,33 +263,24 @@ describe('requestApiToken', () => {
     })
 })
 
-//WTF? noActiveApis out of scope or something
-
-const stillNoActiveApis = {
-    '1234': {
-        youtube: '',
-        reddit: ''
-    }
-}
-
 describe('sessionObject', () => {
 
-    beforeAll(() => {
-        session.__set__('sessions', stillNoActiveApis)
-    })
-    afterAll(() => {
-        session.__set__('sessions', {})
-    })
+    const content = {
+        '1234': {
+            youtube: '',
+            reddit: ''
+        }
+    }
 
     it('does what it do', () => {
-        const sessions = session.__get__('sessions')
-        expect(sessions).toEqual(stillNoActiveApis)
+        sessions.sessions = content
+        expect(sessions.sessions).toEqual(content)
         const call = session.__get__('sessionObject')
         const key = '1234'
         const sessionObject = call(key)
         expect(sessionObject.key).toBe(key)
         const added = sessionObject.setApiToken('reddit', '<api_token>')
-        expect(sessions[key]['reddit']).toBe('<api_token>')
+        expect(sessions.sessions[key]['reddit']).toBe('<api_token>')
         expect(added).toBe(true)
         const token = sessionObject.getApiToken('reddit')
         expect(token).toBe('<api_token>')
@@ -238,67 +294,74 @@ describe('sessionObject', () => {
 
 describe('setApiToken', () => {
 
+    const content = {
+        '1234': {
+            youtube: '',
+            reddit: ''
+        }
+    }
+
     beforeEach(() => {
-        session.__set__('sessions', stillNoActiveApis)
-    })
-    afterAll(() => {
-        session.__set__('sessions', {})
+        sessions.sessions = content
     })
 
     it('sets token', () => {
-        const sessions = session.__get__('sessions')
         const setApiToken = session.__get__('setApiToken')
         const key = '1234'
         const apiToken = '<api_token>'
-        expect(sessions[key]['youtube']).toBeFalsy()
+        expect(sessions.sessions[key]['youtube']).toBeFalsy()
         const added = setApiToken(key, 'youtube', apiToken)
+        const expected = {
+            '1234': {
+                youtube: '<api_token>',
+                reddit: ''
+            }
+        }
+        expect(sessions.sessions).toEqual(expected)
         expect(added).toBe(true)
-        expect(sessions[key]['youtube']).toBe(apiToken)
+        expect(sessions.sessions[key]['youtube']).toBe(apiToken)
     })
 
     it('doesnt set token', () => {
-        const sessions = session.__get__('sessions')
+        expect(sessions.sessions).toEqual(content)
         const setApiToken = session.__get__('setApiToken')
         const key = '1234'
         const apiToken = '<api_token>'
-        expect(sessions).toEqual(stillNoActiveApis)
+        expect(sessions.sessions).toEqual(content)
         let added = setApiToken('1234', 'reddit', {})
         expect(added).toBe(false)
         added = setApiToken('123', 'reddit', apiToken)
         expect(added).toBe(false)
-        expect(sessions).toEqual(stillNoActiveApis)
+        expect(sessions.sessions).toEqual(content)
         added = setApiToken('1234', 'myspace', apiToken)
         expect(added).toBe(false)
-        expect(sessions).toEqual(stillNoActiveApis)
+        expect(sessions.sessions).toEqual(content)
         added = setApiToken({}, 'reddit', apiToken)
         expect(added).toBe(false)
-        expect(sessions).toEqual(stillNoActiveApis)
+        expect(sessions.sessions).toEqual(content)
         added = setApiToken({}, 'reddit')
         expect(added).toBe(false)
-        expect(sessions).toEqual(stillNoActiveApis)
+        expect(sessions.sessions).toEqual(content)
         added = setApiToken({})
         expect(added).toBe(false)
-        expect(sessions).toEqual(stillNoActiveApis)
+        expect(sessions.sessions).toEqual(content)
         added = setApiToken()
         expect(added).toBe(false)
-        expect(sessions).toEqual(stillNoActiveApis)
+        expect(sessions.sessions).toEqual(content)
     })
 })
 
 describe('getApiToken', () => {
 
     beforeEach(() => {
-        session.__set__('sessions', {
+        sessions.sessions = {
             '1234': {
                 youtube: '',
                 reddit: '<api_token>'
             }
-        })
+        }
     })
-    afterAll(() => {
-        session.__set__('sessions', {})
-    })
-
+    
     it('gets token', () => {
         const getApiToken = session.__get__('getApiToken')
         const token = getApiToken('1234', 'reddit')
@@ -328,61 +391,52 @@ describe('removeApiToken', () => {
     }
 
     beforeEach(() => {
-        session.__set__('sessions', content)
-    })
-    afterAll(() => {
-        session.__set__('sessions', {})
+        sessions.sessions = content
     })
 
     it('removes', () => {
-        const sessions = session.__get__('sessions')
-        expect(sessions).toEqual(content)
+        expect(sessions.sessions).toEqual(content)
         const removeApiToken = session.__get__('removeApiToken')
         const removed = removeApiToken('1234', 'reddit')
         expect(removed).toBe(true)
-        expect(sessions['reddit']).toBeFalsy()
+        expect(sessions.sessions['reddit']).toBeFalsy()
     })
     it('doesnt', () => {
-        const sessions = session.__get__('sessions')
-        expect(sessions).toEqual(content)
+        expect(sessions.sessions).toEqual(content)
         const removeApiToken = session.__get__('removeApiToken')
         let removed = removeApiToken('123', 'reddit')
         expect(removed).toBe(false)
-        expect(sessions).toEqual(content)
+        expect(sessions.sessions).toEqual(content)
         removed = removeApiToken('1234', 'youtube')
         expect(removed).toBe(false)
-        expect(sessions).toEqual(content)
+        expect(sessions.sessions).toEqual(content)
         removed = removeApiToken('1234', 'service')
         expect(removed).toBe(false)
-        expect(sessions).toEqual(content)
+        expect(sessions.sessions).toEqual(content)
         removed = removeApiToken('1234')
         expect(removed).toBe(false)
-        expect(sessions).toEqual(content)
+        expect(sessions.sessions).toEqual(content)
         removed = removeApiToken()
         expect(removed).toBe(false)
-        expect(sessions).toEqual(content)
+        expect(sessions.sessions).toEqual(content)
     })
 })
 
 describe('hasActiveApis', () => {
-    const content = {
-        '1234': {
-            youtube: '',
-            reddit: '<api_token>'
-        },
-        '5678': {
-            youtube: '',
-            reddit: ''
-        }
-    }
-
+   
     beforeAll(() => {
-        session.__set__('sessions', content)
+        sessions.sessions = {
+            '1234': {
+                youtube: '',
+                reddit: '<api_token>'
+            },
+            '5678': {
+                youtube: '',
+                reddit: ''
+            }
+        }
     })
-    afterAll(() => {
-        session.__set__('sessions', {})
-    })
-
+    
     it('checks correct', () => {
         const hasActiveApis = session.__get__('hasActiveApis')
         let isTrue = hasActiveApis('1234')
@@ -397,8 +451,10 @@ describe('hasActiveApis', () => {
 })
 
 describe('generateAuthUrl', () => {
+    
+    const generateAuthUrl = session.__get__('generateAuthUrl')
+        
     it('returns falsy with invalid input', () => {
-        const generateAuthUrl = session.__get__('generateAuthUrl')
         let url = generateAuthUrl('yahoo', '1234')
         expect(url).toBeFalsy()
         url = generateAuthUrl({}, [])
@@ -408,11 +464,11 @@ describe('generateAuthUrl', () => {
         url = generateAuthUrl()
         expect(url).toBeFalsy()
     })
+    
     it('returns url with proper input', () => {
-        const generateAuthUrl = session.__get__('generateAuthUrl')
         const key = '1234'
         let url = generateAuthUrl('reddit', key)
-        const token =jwt.sign({ key }, 'secret')
+        const token = jwt.sign({ key }, 'secret')
         expect(url).toEqual(expect.stringContaining('https://www.reddit.com/api/v1/authorize?response_type=code&client_id='))
         expect(url).toEqual(expect.stringContaining(token))
     })

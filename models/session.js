@@ -6,9 +6,6 @@ const { validateInput, iterateOverObject, generateKey } = require('./utils')
 
 const sessions = {
     sessions: {},
-    set: (injection) => {
-        sessions.sessions = injection
-    },
     new: (key, apis) => {
         sessions.sessions[key] = apis
     },
@@ -35,8 +32,7 @@ exports.findByKey = (key) => {
 }
 
 exports.newSession = (key) => {
-    // can't use validateInput because it checks if the key is in sessions
-    if (typeof key === 'string') {
+    if (validateInput({ key })) {
         const apis = {}
         config.apis.map(api => {
             apis[api] = ''
@@ -140,7 +136,7 @@ const getApiToken = (key, api) => {
 }
 
 const removeApiToken = (key, api) => {
-    if (validateInput({ key, api }) && sessions.has(key)) {
+    if (validateInput({ key, api }) && sessions.has(key) && sessions.get(key)[api]) {
         sessions.forget(key, api)
         return true
     }
@@ -166,7 +162,7 @@ const hasActiveApis = (key) => {
 }
 
 const generateAuthUrl = (api, key) => {
-    if (validateInput({ api }) && typeof key === 'string') {
+    if (validateInput({ api, key })) {
         const token = jwt.sign({ key }, process.env.SECRET)
         const template = config.url(api, token)
         let authUrl = `${template.baseUrl}?response_type=code&`
