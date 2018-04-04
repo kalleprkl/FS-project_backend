@@ -3,8 +3,6 @@ axios.defaults.adapter = require('axios/lib/adapters/http')
 const { validateInput } = require('./utils')
 
 exports.getContent = async (token) => {
-    console.log('MODEL', token)
-    
     if (validateInput({ token })) {
         try {
             const res = await axios({
@@ -17,7 +15,6 @@ exports.getContent = async (token) => {
             return res.data.data.children
         } catch (exception) {
             console.log('unauthorized')
-            return ''
         }
     }
     return ''

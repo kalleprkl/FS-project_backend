@@ -1,4 +1,5 @@
 const axios = require('axios')
+//axios.defaults.adapter = require('axios/lib/adapters/http')
 const { validateInput } = require('./utils')
 
 exports.getContent = async (token) => {
@@ -10,7 +11,6 @@ exports.getContent = async (token) => {
             return videos
         } catch (error) {
             console.log('api get error')
-            return ''
         }
     }
     return ''
@@ -35,7 +35,6 @@ const getMyChannels = async (token) => {
             return channels
         } catch (error) {
             console.log('api get error')
-            return ''
         }
     }
     return ''
@@ -64,7 +63,6 @@ const getChannelPlaylists = async (token, channels) => {
             return playlists
         } catch (error) {
             console.log('api get error')
-            return ''
         }
     }
     return ''
@@ -87,49 +85,8 @@ const getPlaylistVideos = async (token, playlists) => {
             return videos
         } catch (error) {
             console.log('api get error')
-            return ''
         }
     }
     return ''
 }
-
-/* const validateInput = (input) => {
-    if (input) {
-        const inputKeys = Object.keys(input)
-        if (Array.isArray(inputKeys) && inputKeys.length > 0) {
-            let valid = true
-            for (let i = 0; i < inputKeys.length; i++) {
-                const key = inputKeys[i]
-                const validator = validators[key]
-                if (!validator || !validator(input[key])) {
-                    return false
-                }
-            }
-            return true
-        }
-        return false
-    }
-    return false
-} */
-
-/* const validators = {
-    token: (token) => {
-        if (typeof token === 'string') {
-            return true
-        }
-        return false
-    },
-    playlists: (playlists) => {
-        if (Array.isArray(playlists)) {
-            return true
-        }
-        return false
-    },
-    channels: (channels) => {
-        if (Array.isArray(channels)) {
-            return true
-        }
-        return false
-    }
-} */
 

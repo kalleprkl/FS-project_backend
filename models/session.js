@@ -4,7 +4,7 @@ axios.defaults.adapter = require('axios/lib/adapters/http')     //ugly from http
 const config = require('../utils/config/session')
 const { validateInput, iterateOverObject, generateKey } = require('./utils')
 
-//state of the controller. could be moved to db
+//state of the model. could be moved to db
 const sessions = {
     sessions: {},
     new: (key, apis) => {
@@ -26,7 +26,6 @@ const sessions = {
 
 
 exports.findByKey = (key) => {
-    console.log('SESSIONS', sessions.sessions)
     if (validateInput({ key }) && sessions.has(key)) {
         return sessionObject(key)
     }
@@ -130,7 +129,6 @@ const setApiToken = (key, api, apiToken) => {
 }
 
 const getApiToken = (key, api) => {
-    console.log('getApiToken', sessions.sessions)
     if (validateInput({ key, api }) && sessions.has(key)) {
         const apis = sessions.get(key)
         return apis[api]

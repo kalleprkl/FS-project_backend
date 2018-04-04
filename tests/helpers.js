@@ -2,11 +2,8 @@ const nock = require('nock')
 
 exports.nockHelper = {
     youtube: (token, path, query, reply) => {
-        nock('https://www.googleapis.com', {
-            reqheaders: {
-                'Authorization': `Bearer ${token}`
-            }
-        })
+        nock('https://www.googleapis.com')
+            //.log(console.log)
             .get(path)
             .query(query)
             .reply((uri, requestBody) => {
@@ -14,12 +11,7 @@ exports.nockHelper = {
             })
     },
     reddit: (token, path, reply) => {
-        nock('https://oauth.reddit.com', {
-            reqheaders: {
-                'User-Agent': process.env.REDDIT_USER_AGENT,
-                'Authorization': "bearer " + token
-            }
-        })
+        nock('https://oauth.reddit.com')
             //.log(console.log)
             .get(path)
             .reply((uri, requestBody) => {
