@@ -32,7 +32,7 @@ sessionRouter.get('/:api', async (request, response) => {
             newSession.setApiToken(api, apiToken)
         }
     }
-    response.redirect('/')
+    response.redirect(process.env.REDIRECT)
 })
 
 sessionRouter.get('/logout/:api', (request, response) => {
