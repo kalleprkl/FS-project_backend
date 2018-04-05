@@ -32,7 +32,7 @@ sessionRouter.get('/:api', async (request, response) => {
             newSession.setApiToken(api, apiToken)
         }
     }
-    response.redirect('http://localhost:3000/')
+    response.redirect('/')
 })
 
 sessionRouter.get('/logout/:api', (request, response) => {
