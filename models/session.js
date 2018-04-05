@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken')
 const axios = require('axios')
 axios.defaults.adapter = require('axios/lib/adapters/http')     //ugly from https://github.com/axios/axios/issues/305
 const config = require('../utils/config/session')
-const { validateInput, iterateOverObject, generateKey } = require('./utils')
+const { validate, iterateOverObject, generateKey } = require('./utils')
 
 //state of the model. could be moved to db
 const sessions = {
@@ -26,14 +26,14 @@ const sessions = {
 
 
 exports.findByKey = (key) => {
-    if (validateInput({ key }) && sessions.has(key)) {
+    if (validate({ key }) && sessions.has(key)) {
         return sessionObject(key)
     }
     return ''
 }
 
 exports.newSession = (key) => {
-    if (validateInput({ key })) {
+    if (validate({ key })) {
         const apis = {}
         config.apis.map(api => {
             apis[api] = ''
@@ -45,7 +45,7 @@ exports.newSession = (key) => {
 }
 
 exports.removeSession = (key) => {
-    if (validateInput({ key }) && sessions.has(key)) {
+    if (validate({ key }) && sessions.has(key)) {
         sessions.remove(key)
         return true
     }
@@ -53,7 +53,7 @@ exports.removeSession = (key) => {
 }
 
 exports.responseForExisting = (key) => {
-    if (validateInput({ key }) && sessions.has(key)) {
+    if (validate({ key }) && sessions.has(key)) {
         const sessionApis = sessions.get(key)
         const apis = []
         iterateOverObject(sessionApis, (api) => {
@@ -85,7 +85,7 @@ exports.responseForNewSession = () => {
 }
 
 exports.requestApiToken = async (api, code) => {
-    if (validateInput({ api, code })) {
+    if (validate({ api, code })) {
         const request = config.tokenRequest(api, code)
         try {
             const response = await axios.post(request.url, request.data, { headers: request.headers, auth: request.auth })
@@ -97,7 +97,7 @@ exports.requestApiToken = async (api, code) => {
 }
 
 const sessionObject = (key) => {
-    if (validateInput({ key }) && sessions.has(key)) {
+    if (validate({ key }) && sessions.has(key)) {
         return {
             key,
             setApiToken: (api, apiToken) => {
@@ -118,7 +118,7 @@ const sessionObject = (key) => {
 }
 
 const setApiToken = (key, api, apiToken) => {
-    if (validateInput({ key, api, apiToken }) && sessions.has(key)) {
+    if (validate({ key, api, apiToken }) && sessions.has(key)) {
         const apis = sessions.get(key)
         if (apis) {
             apis[api] = apiToken
@@ -129,7 +129,7 @@ const setApiToken = (key, api, apiToken) => {
 }
 
 const getApiToken = (key, api) => {
-    if (validateInput({ key, api }) && sessions.has(key)) {
+    if (validate({ key, api }) && sessions.has(key)) {
         const apis = sessions.get(key)
         return apis[api]
     }
@@ -137,7 +137,7 @@ const getApiToken = (key, api) => {
 }
 
 const removeApiToken = (key, api) => {
-    if (validateInput({ key, api }) && sessions.has(key) && sessions.get(key)[api]) {
+    if (validate({ key, api }) && sessions.has(key) && sessions.get(key)[api]) {
         sessions.forget(key, api)
         return true
     }
@@ -145,7 +145,7 @@ const removeApiToken = (key, api) => {
 }
 
 const hasActiveApis = (key) => {
-    if (validateInput({ key }) && sessions.has(key)) {
+    if (validate({ key }) && sessions.has(key)) {
         const apis = sessions.get(key)
         let empty = true
         iterateOverObject(apis, api => {
@@ -163,7 +163,7 @@ const hasActiveApis = (key) => {
 }
 
 const generateAuthUrl = (api, key) => {
-    if (validateInput({ api, key })) {
+    if (validate({ api, key })) {
         const token = jwt.sign({ key }, process.env.SECRET)
         const template = config.url(api, token)
         let authUrl = `${template.baseUrl}?response_type=code&`

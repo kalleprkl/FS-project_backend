@@ -1,9 +1,9 @@
 const axios = require('axios')
 axios.defaults.adapter = require('axios/lib/adapters/http') 
-const { validateInput } = require('./utils')
+const { validate } = require('./utils')
 
 exports.getContent = async (token) => {
-    if (validateInput({ token })) {
+    if (validate({ token })) {
         try {
             const res = await axios({
                 url: 'https://oauth.reddit.com/best',

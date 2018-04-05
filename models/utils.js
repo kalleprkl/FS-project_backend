@@ -1,6 +1,6 @@
 const config = require('../utils/config/session')
 
-exports.validateInput = (input) => {
+exports.validate = (input) => {
     if (input) {
         const inputKeys = Object.keys(input)
         if (Array.isArray(inputKeys) && inputKeys.length > 0) {

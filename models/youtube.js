@@ -1,9 +1,9 @@
 const axios = require('axios')
 //axios.defaults.adapter = require('axios/lib/adapters/http')
-const { validateInput } = require('./utils')
+const { validate } = require('./utils')
 
 exports.getContent = async (token) => {
-    if (validateInput({ token })) {
+    if (validate({ token })) {
         try {
             const channels = await getMyChannels(token)
             const playlists = await getChannelPlaylists(token, channels)
@@ -20,10 +20,8 @@ const baseUrl = (scope, mine, maxResults, ) => {
 
 }
 
-
-
 const getMyChannels = async (token) => {
-    if (validateInput({ token })) {
+    if (validate({ token })) {
         try {
             const response = await axios({
                 url: 'https://www.googleapis.com/youtube/v3/subscriptions?mine=true&part=snippet%2CcontentDetails',
@@ -46,7 +44,7 @@ const address = {
 }
 
 const getChannelPlaylists = async (token, channels) => {
-    if (validateInput({ token, channels })) {
+    if (validate({ token, channels })) {
         try {
             let playlists = []
             const channelPlaylists = await Promise.all(channels.map(async channel => {
@@ -71,7 +69,7 @@ const getChannelPlaylists = async (token, channels) => {
 
 
 const getPlaylistVideos = async (token, playlists) => {
-    if (validateInput({ token, playlists })) {
+    if (validate({ token, playlists })) {
         try {
             const videos = await Promise.all(playlists.map(async playlist => {
                 const res = await axios({
