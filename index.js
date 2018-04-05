@@ -24,6 +24,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 mongoose.Promise = global.Promise*/
 
+app.use(express.static('build'))
 app.use(cors())
 app.use(bodyParser.json())
 app.use(extractKeyFromRequest)
