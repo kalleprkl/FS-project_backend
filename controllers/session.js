@@ -4,7 +4,6 @@ const sessionRouter = require('express').Router()
 var url = require('url')
 
 sessionRouter.get('/', (request, response) => {
-    console.log('hjep')
     //initial query from browser
     const session = Session.findByKey(request.key)
     let responseContent = ''

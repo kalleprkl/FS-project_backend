@@ -20,7 +20,7 @@ describe('validateInput', () => {
     })
 
     it('validates proper (good input)', () => {
-        let valid = utils.validateInput({
+        let valid = utils.validate({
             key: 'string',
             api: 'reddit',
             code: 'string',
@@ -30,7 +30,7 @@ describe('validateInput', () => {
             channels: []
         })
         expect(valid).toBe(true)
-        valid = utils.validateInput({
+        valid = utils.validate({
             key: 'string',
             api: 'youtube',
             code: 'string',
@@ -43,7 +43,7 @@ describe('validateInput', () => {
     })
 
     it('validates proper (bad input)', () => {
-        let valid = utils.validateInput({
+        let valid = utils.validate({
             key: 'string',
             api: 'aku ankka',       //<---
             code: 'string',
@@ -53,7 +53,7 @@ describe('validateInput', () => {
             channels: []
         })
         expect(valid).toBe(false)
-        valid = utils.validateInput({
+        valid = utils.validate({
             key: {},
             api: 'reddit',
             code: 'string',
@@ -63,7 +63,7 @@ describe('validateInput', () => {
             channels: []
         })
         expect(valid).toBe(false)
-        valid = utils.validateInput({
+        valid = utils.validate({
             key: 'string',
             api: 'reddit',
             code: 2,
@@ -73,7 +73,7 @@ describe('validateInput', () => {
             channels: []
         })
         expect(valid).toBe(false)
-        valid = utils.validateInput({
+        valid = utils.validate({
             key: 'string',
             api: 'reddit',
             code: 'string',
@@ -83,7 +83,7 @@ describe('validateInput', () => {
             channels: []
         })
         expect(valid).toBe(false)
-        valid = utils.validateInput({
+        valid = utils.validate({
             key: 'string',
             api: 'reddit',
             code: 'string',
@@ -93,7 +93,7 @@ describe('validateInput', () => {
             channels: []
         })
         expect(valid).toBe(false)
-        valid = utils.validateInput({
+        valid = utils.validate({
             key: 'string',
             api: 'reddit',
             code: 'string',
@@ -103,7 +103,7 @@ describe('validateInput', () => {
             channels: []
         })
         expect(valid).toBe(false)
-        valid = utils.validateInput({
+        valid = utils.validate({
             key: 'string',
             api: 'reddit',
             code: 'string',
